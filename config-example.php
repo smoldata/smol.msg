@@ -1,5 +1,6 @@
 <?php
 
+$phone_number = '(718) 555-1212';
 $website_url = 'https://sms.smalldata.coop/7185551212';
 
 // You can find the account SID / auth token at https://twilio.com/console

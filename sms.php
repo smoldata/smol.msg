@@ -45,14 +45,16 @@ if (! empty($_POST['Body']) &&
 			$msg = "Oops, you have left the chat. Send /start to rejoin.";
 			msg_tx($rx_id, $usr->id, $msg, "send now");
 		} else if ($context == 'chat') {
+			$channel_msg = "$usr->name: {$_POST['Body']}";
+			msg_add_to_channel($rx_id, $usr->id, $channel_msg);
 			$active_usrs = usr_get_active($usr);
 			if (DEBUG) {
 				echo "Active users:\n";
 				print_r($active_usrs);
 			}
 			$msg = msg_signed_format($usr, $_POST['Body']);
-			foreach ($active_usrs as $usr_id) {
-				msg_tx($rx_id, $usr_id, $msg);
+			foreach ($active_usrs as $tx_usr_id) {
+				msg_tx($rx_id, $tx_usr_id, $msg);
 			}
 		} else {
 			if (DEBUG) {

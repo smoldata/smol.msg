@@ -11,5 +11,6 @@ function db_setup() {
 	include 'config.php';
 	$dsn = "mysql:host=$db_host;dbname=$db_name;charset=utf8mb4";
 	$db = new PDO($dsn, $db_user, $db_pass);
+	$db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
 	return $db;
 }

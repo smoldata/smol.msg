@@ -293,3 +293,19 @@ function msg_command($usr, $rx_id, $cmd) {
 	msg_tx($rx_id, $usr->id, $msg, "send now");
 	return true;
 }
+
+function msg_add_to_channel($rx_id, $usr_id, $msg) {
+	$db = db_setup();
+	$created = date('Y-m-d H:i:s');
+	$query = $db->prepare("
+		INSERT INTO channel
+		(rx_id, usr_id, msg, created)
+		VALUES (?, ?, ?, ?)
+	");
+	$query->execute(array(
+		$rx_id,
+		$usr_id,
+		$msg,
+		$created
+	));
+}

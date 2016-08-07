@@ -42,3 +42,15 @@ CREATE TABLE `usr_mute` (
   `created` datetime NOT NULL,
   UNIQUE KEY `usr_id` (`usr_id`,`muted_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `channel`;
+CREATE TABLE `channel` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `rx_id` int(11) NOT NULL,
+  `usr_id` int(11) NOT NULL,
+  `msg` text NOT NULL,
+  `created` datetime NOT NULL,
+  `ip_address` varchar(255) DEFAULT NULL,
+  `avatar_image` text,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
