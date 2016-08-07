@@ -26,6 +26,10 @@ function usr_get_by_phone($phone) {
 	$db = db_setup();
 	$phone = usr_normalize_phone($phone);
 	
+	if (DEBUG) {
+		echo "Looking up phone: $phone\n";
+	}
+
 	$query = $db->prepare("
 		SELECT *
 		FROM usr
@@ -56,6 +60,14 @@ function usr_get_by_phone($phone) {
 			WHERE phone = ?
 		");
 		$query->execute(array($phone));
+		$error_code = $query->errorCode();
+		if ($error_code != '00000') {
+			if (DEBUG) {
+				echo "Error usr $error_code:\n";
+				print_r($query->errorInfo());
+			}
+			return null;
+		}
 		$usr = $query->fetchObject();
 	}
 	return $usr;
@@ -81,6 +93,11 @@ function usr_set_context($usr, $context) {
 
 function usr_normalize_phone($phone) {
 	
+	$phone = trim($phone);
+	if (substr($phone, 0, 1) == '+') {
+		return $phone;
+	}
+
 	// Strip anything that's NOT a number
 	$phone = preg_replace('/\D/', '', $phone);
 	

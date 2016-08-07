@@ -17,7 +17,13 @@ include 'include/usr.php';
 if (! empty($_POST['Body']) &&
     ! empty($_POST['From'])) {
 	$usr = usr_get_by_phone($_POST['From']);
+	if (! $usr) {
+		die("Error: could not find a usr for {$_POST['From']}");
+	}
 	$rx_id = msg_rx($usr, $_POST['Body']);
+	if (! $rx_id) {
+		die("Error: could not rx {$_POST['Body']}");
+	}
 	$context = usr_get_context($usr);
 
 	if (! msg_command($usr, $rx_id, $_POST['Body'])) {

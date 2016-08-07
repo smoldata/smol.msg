@@ -142,40 +142,37 @@ function msg_send_sms($tx) {
 	$response = array();
 
 	if (DEBUG) {
-		echo "Sending SMS to $tx->phone...";
-	}
-
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, "https://api.twilio.com/2010-04-01/Accounts/$twilio_account_sid/Messages");
-	curl_setopt($ch, CURLOPT_HEADER, true);
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-	curl_setopt($ch, CURLOPT_POST, true);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $post_str);
-	curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-	curl_setopt($ch, CURLOPT_USERPWD, "$twilio_account_sid:$twilio_auth_token");
-
-	$msg_last_send = microtime(true);
-	$response['rsp'] = curl_exec($ch);
-
-	if (curl_errno($ch)) {
-		$ok = 0;
-		$response['error'] = curl_errno($ch) . ': ' . curl_error($ch);
+		echo "Would have sent SMS to $tx->phone.\n";
+		$response = array(
+			'debug' => true
+		);
+		$ok = 1;
 	} else {
-		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		$ok = ($http_code == 201) ? 1 : 0;
-		$response['info'] = curl_getinfo($ch);
-	}
-	
-	if (DEBUG) {
-		if ($ok) {
-			echo " ok\n";
-		} else {
-			echo " fail\n";
-		}
-	}
 
-	curl_close($ch);
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, "https://api.twilio.com/2010-04-01/Accounts/$twilio_account_sid/Messages");
+		curl_setopt($ch, CURLOPT_HEADER, true);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $post_str);
+		curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+		curl_setopt($ch, CURLOPT_USERPWD, "$twilio_account_sid:$twilio_auth_token");
+
+		$msg_last_send = microtime(true);
+		$response['rsp'] = curl_exec($ch);
+
+		if (curl_errno($ch)) {
+			$ok = 0;
+			$response['error'] = curl_errno($ch) . ': ' . curl_error($ch);
+		} else {
+			$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+			$ok = ($http_code == 201) ? 1 : 0;
+			$response['info'] = curl_getinfo($ch);
+		}
+
+		curl_close($ch);
+	}
 
 	$response_json = json_encode($response);
 	$transmitted = date('Y-m-d H:i:s');
@@ -197,12 +194,7 @@ function msg_send_sms($tx) {
 	));
 
 	if (DEBUG) {
-		echo "tx object:\n";
 		print_r($tx);
-		echo "POST data:\n";
-		print_r($post);
-		echo "Response:\n";
-		print_r($response);
 	}
 
 	return $tx->id;
