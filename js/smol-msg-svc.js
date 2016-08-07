@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
 	var liveAvatar = !!window.localStorage.liveAvatar;
 	var timeMarker = null;
 	var userMediaStream = null;
-	var pollingInterval = 1500;
+	var pollingInterval = 5000;
 
 	function updateScroll() {
 		updatingScroll = true;
