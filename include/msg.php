@@ -268,9 +268,9 @@ function msg_command($usr, $rx_id, $cmd) {
 			$msg = $usr_errors[$rsp];
 		}
 	} else if (preg_match('/^(un)?mute (.+)$/', $cmd, $matches)) {
-		$active = ($matches[1] == 'un') ? false : true;
+		$mute_active = ($matches[1] == 'un') ? false : true;
 		$mute_name = $matches[2];
-		$rsp = usr_set_mute($usr, $mute_name, $active);
+		$rsp = usr_set_mute($usr, $mute_name, $mute_active);
 		if ($rsp == USR_MUTED) {
 			$msg = "You will no longer receive messages from $mute_name.\nSend \"/unmute $mute_name\" to turn the mute off.";
 		} else if ($rsp == USR_UNMUTED) {
@@ -280,8 +280,7 @@ function msg_command($usr, $rx_id, $cmd) {
 			$msg = $usr_errors[$rsp];
 		}
 	} else if ($cmd == 'website') {
-		$msg = "Uh, this feature doesn't exist yet. Soon!";
-	//	$msg = "You can read the chat archives at:\n$website_url";
+		$msg = "You can read the chat archives at:\n$website_url";
 	} else if (preg_match('/invite (.+)$/', $cmd, $matches)) {
 		$phone = $matches[1];
 		usr_invite($usr, $rx_id, $phone);
