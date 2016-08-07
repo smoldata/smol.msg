@@ -1,0 +1,151 @@
+html {
+	box-sizing: border-box;
+}
+*, *:before, *:after {
+	box-sizing: inherit;
+}
+
+body {
+	margin: 0;
+}
+
+#page {
+	width: 100%;
+	max-width: 750px;
+	margin: 0 auto;
+}
+
+#msgs {
+	font: 14px menlo, monospace;
+	padding: 0 10px 70px 10px;
+	background: #f2f2f2;
+	min-height: 100vh;
+}
+
+#msgs p {
+	margin: 10px 0 0 0;
+	border-top: 1px solid #ccc;
+	padding: 10px 0 0 0;
+}
+
+#msgs p .img {
+	float: left;
+	position: relative;
+	width: 48px;
+	height: 48px;
+	border-radius: 5px;
+	background-size: 48px 48px;
+}
+
+#msgs p .msg {
+	float: left;
+	margin-left: 10px;
+	width: calc(100% - 58px);
+}
+
+#msgs p:after {
+	content: "";
+	clear: both;
+	display: table;
+}
+
+#msgs p:first-child {
+	border-top: none;
+	margin-top: 0;
+}
+
+#msgs p:last-child {
+	padding-bottom: 10px;
+}
+
+form {
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+	max-width: 750px;
+	background: #fff;
+	margin-bottom: 0;
+}
+
+.avatar {
+	position: absolute;
+	width: 48px;
+	height: 48px;
+	border-radius: 5px;
+	background: #ccc;
+	overflow: hidden;
+}
+
+#avatar {
+	left: 10px;
+	top: 10px;
+}
+
+.avatar .icon {
+	display: block;
+	margin: 5px;
+	width: 38px;
+	height: 38px;
+	background-image: url('avatars-white.png');
+	background-size: 190px 190px;
+}
+
+.avatar.black-icon .icon {
+	background-image: url('avatars-black.png');
+}
+
+.avatar .relative {
+	position: relative;
+}
+
+#avatar input {
+	position: absolute;
+	width: 48px;
+	height: 48px;
+	opacity: 0;
+}
+
+#avatar video {
+	position: absolute;
+	top: 0;
+	left: -130px;
+	width: 128px;
+	height: 96px;
+}
+
+#avatar canvas {
+	position: absolute;
+	width: 48px;
+	height: 48px;
+	top: -5px;
+	left: 0;
+}
+
+textarea {
+	display: block;
+	font: 14px/22px menlo, monospace;
+	width: 100%;
+	height: 62px;
+	border: none;
+	padding: 10px 10px 10px 70px;
+	margin: 3px 0;
+	background: rgba(255, 255, 255, 0.8);
+	border-radius: 0;
+	-webkit-appearance: none;
+}
+
+textarea:focus {
+	outline: none;
+}
+
+.time-marker {
+	color: #808080;
+	padding-top: 10px;
+	font-size: 12px;
+	margin-bottom: -7px;
+}
+
+.sms-only {
+	font: 14px/20px menlo, monospace;
+	padding: 0 1em;
+}
