@@ -1,8 +1,19 @@
 <?php
 
+$website_url = 'https://sms.smalldata.coop/7185551212';
+
+// You can find the account SID / auth token at https://twilio.com/console
+$twilio_account_sid = 'XXXXXXXXXXXXXXXXXX';
+$twilio_auth_token = 'XXXXXXXXXXXXXXXXXX';
+
+// Set up a new message service at https://www.twilio.com/console/sms/services
+$twilio_messaging_service_sid = 'XXXXXXXXXXXXXXXXXX';
+
+// MySQL settings
 $db_host = 'localhost';
 $db_user = 'user';
-$db_pass = 'pass';
+$db_pass = 'XXXXXXXXXX';
 $db_name = 'smol_msg_svc';
 
 date_default_timezone_set('America/New_York');
+mb_internal_encoding('UTF-8');
