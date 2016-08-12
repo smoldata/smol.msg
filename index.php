@@ -8,11 +8,15 @@ $topic = 'smol msg svc';
 <html>
 	<head>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+		<?php if (empty($_GET['eo1'])) { ?>
+			<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+		<?php } else { ?>
+			<meta name="viewport" content="width=1080">
+		<?php } ?>
 		<title><?php echo $topic; ?></title>
 		<link rel="stylesheet" href="css/smol-msg-svc.css">
 	</head>
-	<body>
+	<body<?php if (! empty($_GET['eo1'])) { ?> class="eo1"<?php } ?>>
 		<div id="page">
 			<div id="msgs"></div>
 			<form action="submit.php" method="post">
