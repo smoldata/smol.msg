@@ -30,7 +30,7 @@ body.eo1 #page {
 }
 
 #msgs {
-	font: 14px menlo, monospace;
+	font: 14px/20px menlo, monospace;
 	padding: 0 1em;
 	background: #111;
 	color: #ccc;
@@ -39,6 +39,7 @@ body.eo1 #page {
 
 body.eo1 #msgs {
 	font-size: 18px;
+	line-height: 25px;
 	background: #000;
 }
 
