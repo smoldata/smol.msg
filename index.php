@@ -42,7 +42,7 @@ function normalize_phone_number($phone) {
 						SMS <strong><?php echo $phone_number; ?></strong> to join the chat.
 						<span class="website"><?php echo $website_url; ?></span>
 					<?php } else { ?>
-						SMS <a href="tel:<?php echo normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to join the chat.
+						SMS <a href="sms:<?php echo normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to join the chat.
 					<?php } ?>
 				</p>
 			</form>
