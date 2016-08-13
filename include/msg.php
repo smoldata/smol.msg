@@ -56,6 +56,16 @@ function msg_tx($rx_id, $usr_id, $msg, $send_now = false) {
 	));
 	$tx_id = $db->lastInsertId();
 	if (! empty($send_now)) {
+		$tx_batch = msg_batch_uuid();
+		$query = $db->prepare("
+			UPDATE tx
+			SET transmit_batch = ?
+			WHERE id = ?
+		");
+		$query->execute(array(
+			$tx_batch,
+			$tx_id
+		));
 		msg_send_sms($tx_id);
 	}
 	return $tx_id;
@@ -283,7 +293,7 @@ function msg_command($usr, $rx_id, $cmd) {
 			'stop' => 'Send "/stop" to leave the chat. You can rejoin with /start at any time.',
 			'start' => 'Send "/start" to rejoin the chat.',
 			'name' => 'Send "/name susan" to set your name to "susan."',
-			'invite' => 'Send "/invite 7185551212" to invite a friend by phone number.',
+			'invite' => 'Send "/invite (718) 555-1212" to invite a friend by phone number.',
 			'mute' => 'Send "/mute chad" to stop getting messages from Chad.',
 			'unmute' => 'Send "/unmute chad" to stop muting messages from Chad.',
 			'website' => 'Send "/website" if you want to get the chat archive URL.',
