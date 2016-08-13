@@ -50,11 +50,13 @@ function normalize_phone_number($phone) {
 				</div>-->
 				<p class="sms-only">
 					<?php if (! empty($_GET['eo1'])) { ?>
-						SMS <strong><?php echo $phone_number; ?></strong> to join the chat.
+						<span class="prompt">SMS <strong><?php echo $phone_number; ?></strong> to join the chat.</span>
 						<span class="website"><?php echo $website_url; ?></span>
+						<br class="clear">
 					<?php } else { ?>
-						SMS <a href="sms:<?php echo normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to chat.
+						<span class="prompt">SMS <a href="sms:<?php echo normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to chat.</span>
 						<!--<a href="#about" class="about-link">About</a>-->
+						<br class="clear">
 					<?php } ?>
 				</p>
 			</form>

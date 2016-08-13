@@ -206,3 +206,11 @@ strong {
 	right: 0.5em;
 	top: 0;
 }
+
+.prompt {
+	float: left;
+}
+
+.clear {
+	clear: both;
+}
