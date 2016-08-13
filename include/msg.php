@@ -402,6 +402,7 @@ function msg_approve($id) {
 		return E_MSG_NOT_FOUND;
 	}
 
+	/*
 	$query = $db->prepare("
 		SELECT *
 		FROM tx
@@ -418,6 +419,7 @@ function msg_approve($id) {
 		}
 		return E_MSG_ALREADY_APPROVED;
 	}
+	*/
 
 	$query = $db->prepare("
 		SELECT *
