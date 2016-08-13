@@ -11,6 +11,12 @@ html, body {
 
 body {
 	margin: 0;
+	color: #ccc;
+	background: #000;
+}
+
+a {
+	color: #fff;
 }
 
 #page {
@@ -20,45 +26,26 @@ body {
 }
 
 body.eo1 #page {
-	max-width: 1080px;
+	max-width: none;
 }
 
 #msgs {
 	font: 14px menlo, monospace;
-	padding: 0 10px 70px 10px;
-	background: #f2f2f2;
+	padding: 0 1em;
+	background: #111;
+	color: #ccc;
 	min-height: 100vh;
 }
 
 body.eo1 #msgs {
-	font-size: 24px;
+	font-size: 18px;
+	background: #000;
 }
 
 #msgs p {
 	margin: 10px 0 0 0;
-	border-top: 1px solid #ccc;
+	border-top: 1px solid #333;
 	padding: 10px 0 0 0;
-}
-
-#msgs p .img {
-	float: left;
-	position: relative;
-	width: 48px;
-	height: 48px;
-	border-radius: 5px;
-	background-size: 48px 48px;
-}
-
-#msgs p .msg {
-	float: left;
-	margin-left: 10px;
-	width: calc(100% - 58px);
-}
-
-#msgs p:after {
-	content: "";
-	clear: both;
-	display: table;
 }
 
 #msgs p:first-child {
@@ -70,13 +57,22 @@ body.eo1 #msgs {
 	padding-bottom: 10px;
 }
 
+.website {
+	float: right;
+}
+
 form {
 	position: fixed;
 	bottom: 0;
 	width: 100%;
-	max-width: 750px;
-	background: #fff;
+	color: #808080;
+	background: #222;
 	margin-bottom: 0;
+	max-width: 750px;
+}
+
+body.eo1 form {
+	max-width: none;
 }
 
 .avatar {
@@ -151,13 +147,22 @@ textarea:focus {
 }
 
 .time-marker {
-	color: #808080;
+	color: #666;
 	padding-top: 10px;
 	font-size: 12px;
-	margin-bottom: -7px;
+	margin-bottom: -8px;
 }
 
 .sms-only {
-	font: 14px/20px menlo, monospace;
+	font: 12px/20px menlo, monospace;
 	padding: 0 1em;
+}
+
+body.eo1 .sms-only {
+	font-size: 18px;
+}
+
+strong {
+	font-weight: normal;
+	color: #fff;
 }

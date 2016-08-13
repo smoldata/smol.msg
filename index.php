@@ -3,6 +3,12 @@
 include 'config.php';
 $topic = 'smol msg svc';
 
+function normalize_phone_number($phone) {
+	$phone = preg_replace('/\D/', '', $phone);
+	$phone = "+1$phone";
+	return $phone;
+}
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -11,7 +17,7 @@ $topic = 'smol msg svc';
 		<?php if (empty($_GET['eo1'])) { ?>
 			<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
 		<?php } else { ?>
-			<meta name="viewport" content="width=1080">
+			<meta name="viewport" content="height=1920, width=1080">
 		<?php } ?>
 		<title><?php echo $topic; ?></title>
 		<link rel="stylesheet" href="css/smol-msg-svc.css">
@@ -32,8 +38,12 @@ $topic = 'smol msg svc';
 				</div>
 				<textarea name="msg" placeholder="Type a message here, then press [return]" cols="80" rows="3"></textarea>-->
 				<p class="sms-only">
-					<strong><?php echo $prompt; ?></strong><br>
-					Send an SMS to <?php echo $phone_number; ?> to join the chat.
+					<?php if (! empty($_GET['eo1'])) { ?>
+						SMS <strong><?php echo $phone_number; ?></strong> to join the chat.
+						<span class="website"><?php echo $website_url; ?></span>
+					<?php } else { ?>
+						SMS <a href="tel:<?php echo normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to join the chat.
+					<?php } ?>
 				</p>
 			</form>
 		</div>

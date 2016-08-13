@@ -57,7 +57,7 @@ jQuery(document).ready(function($) {
 
 		checkTimeMarker(msg.timestamp);
 
-		$('#msg-container').append('<p id="msg-' + msg.id + '" style="border-color: ' + color + '">' +
+		$('#msg-container').append('<p id="msg-' + msg.id + '">' +
 		    img +
 		    '<span class="msg">' + msg.msg + '</span>' +
 		  '</p>');
@@ -300,5 +300,7 @@ jQuery(document).ready(function($) {
 	$('input[name=avatar_icon]').val(avatar.icon);
 	//$('form').css('background-color', avatar.color);
 	
-	$('#msgs').css('padding-bottom', $('form').height());
+	var h = $('form').height();
+	$('#msgs').css('padding-bottom', h);
+	$('#msgs').css('min-height', 'calc(100vh - ' + h + 'px)');
 });
