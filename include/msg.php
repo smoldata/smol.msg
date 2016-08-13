@@ -410,8 +410,9 @@ function msg_approve($id) {
 	$query->execute(array(
 		$id
 	));
-	$exists = $query->fetchObject();
-	if (! empty($exists)) {
+	$exists = $query->fetchAll();
+	if (is_array($exists) &&
+	    count($exists) > 1) {
 		if (DEBUG) {
 			echo "E_MSG_ALREADY_APPROVED\n";
 		}
