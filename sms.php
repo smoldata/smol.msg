@@ -28,17 +28,25 @@ if (! empty($_POST['Body']) &&
 
 	if (! msg_command($usr, $rx_id, $_POST['Body'])) {
 		if ($context == 'intro') {
-			$rsp = "Thanks for your message! To chat with others who replied, choose a name (or chat handle):";
-			msg_tx($rx_id, $usr->id, $rsp, "send now");
+			$msg = msg_signed_format($usr, "{$_POST['Body']}\n[/approve {$rx_id} or /ban {$usr->name}]");
+			$admin_count = msg_admin_tx($rx_id, $usr, $msg);
 			usr_set_context($usr, 'name');
+			if ($admin_count == 0) {
+				usr_set_status($usr, 'admin');
+				$rsp = "Hi, you are the first one here. Choose a name (or chat handle):";
+				msg_tx($rx_id, $usr->id, $rsp, "send now");
+			} else {
+				$rsp = "Thanks for your message! To chat with others who replied, choose a name (or chat handle):";
+				msg_tx($rx_id, $usr->id, $rsp, "send now");
+			}
 		} else if ($context == 'invited') {
 			$rsp = "Welcome to the chat! Please choose a name (or chat handle):";
 			msg_tx($rx_id, $usr->id, $rsp, "send now");
 			usr_set_context($usr, 'name');
 		} else if ($context == 'name') {
-			$rsp = usr_set_name($usr, $_POST['Body']);
+			$rsp = usr_set_name($usr, $rx_id, $_POST['Body']);
 			if ($rsp == OK) {
-				$msg = "Welcome to the chat! Reply /stop to leave, or send /help for more commands.";
+				$msg = "Reply /stop to leave, or /help for more commands. Welcome, $usr->name!";
 				msg_tx($rx_id, $usr->id, $msg, "send now");
 				usr_set_context($usr, 'chat');
 			} else {
@@ -51,17 +59,7 @@ if (! empty($_POST['Body']) &&
 			$msg = "Oops, you have left the chat. Send /start to rejoin.";
 			msg_tx($rx_id, $usr->id, $msg, "send now");
 		} else if ($context == 'chat') {
-			$channel_msg = "$usr->name: {$_POST['Body']}";
-			msg_add_to_channel($rx_id, $usr->id, $channel_msg);
-			$active_usrs = usr_get_active($usr);
-			if (DEBUG) {
-				echo "Active users:\n";
-				print_r($active_usrs);
-			}
-			$msg = msg_signed_format($usr, $_POST['Body']);
-			foreach ($active_usrs as $tx_usr_id) {
-				msg_tx($rx_id, $tx_usr_id, $msg);
-			}
+			msg_chat($usr, $rx_id);
 		} else {
 			if (DEBUG) {
 				echo "User has unknown context: $context\n";

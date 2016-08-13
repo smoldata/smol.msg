@@ -66,6 +66,7 @@ jQuery(document).ready(function($) {
 	function checkTimeMarker(msgTimestamp) {
 		var now = new Date();
 		var msgTime = new Date(msgTimestamp * 1000);
+
 		var timeDiff = msgTime.getTime() - timeMarker;
 		if (! timeMarker ||
 			timeDiff > 1000 * 60 * 5) {
@@ -303,4 +304,16 @@ jQuery(document).ready(function($) {
 	var h = $('form').height();
 	$('#msgs').css('padding-bottom', h);
 	$('#msgs').css('min-height', 'calc(100vh - ' + h + 'px)');
+	
+	$('.about-link').click(function(e) {
+		e.preventDefault();
+		$('#about').toggleClass('visible');
+		if ($('#about').hasClass('visible')) {
+			$('#about').css('height', 'calc(100vh - ' + $('form').height() + 'px)');
+		} else {
+			$('#about').height(0);
+		}
+	});
+	
+	
 });

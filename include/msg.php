@@ -1,6 +1,10 @@
 <?php
 
 define('MSG_MUTED_STATUS', -1);
+define('E_MSG_NOT_FOUND', 1);
+define('E_MSG_ALREADY_APPROVED', 2);
+define('E_MSG_SENDER_NOT_FOUND', 3);
+define('E_MSG_USER_BANNED', 4);
 
 function msg_rx($usr, $msg) {
 	$db = db_setup();
@@ -55,6 +59,35 @@ function msg_tx($rx_id, $usr_id, $msg, $send_now = false) {
 		msg_send_sms($tx_id);
 	}
 	return $tx_id;
+}
+
+function msg_admin_tx($rx_id, $sender, $msg) {
+
+	if (is_array($msg)) {
+		foreach ($msg as $msg_part) {
+			msg_admin_tx($rx_id, $sender, $msg_part);
+		}
+		return;
+	}
+
+	$db = db_setup();
+	$queued = date('Y-m-d H:i:s');
+	$query = $db->prepare("
+		INSERT INTO tx
+		(rx_id, usr_id, msg, queued)
+		VALUES (?, ?, ?, ?)
+	");
+
+	$admins = usr_get_admins($sender);
+	foreach ($admins as $admin_id) {
+		$query->execute(array(
+			$rx_id,
+			$admin_id,
+			$msg,
+			$queued
+		));
+	}
+	return count($admins);
 }
 
 function msg_send_pending() {
@@ -252,7 +285,7 @@ function msg_command($usr, $rx_id, $cmd) {
 		$msg = 'You have rejoined the chat. Welcome back!';
 		usr_set_context($usr, 'chat');
 	} else if (preg_match('/^name (.+)$/', $cmd, $matches)) {
-		$rsp = usr_set_name($usr, $matches[1]);
+		$rsp = usr_set_name($usr, $rx_id, $matches[1]);
 		if ($rsp == OK) {
 			$msg = "From now on you will be known as {$usr->name}.";
 		} else {
@@ -276,13 +309,107 @@ function msg_command($usr, $rx_id, $cmd) {
 	} else if (preg_match('/invite (.+)$/', $cmd, $matches)) {
 		$phone = $matches[1];
 		usr_invite($usr, $rx_id, $phone);
+	} else if (usr_is_admin($usr) &&
+	           preg_match('/approve (\d+)$/', $cmd, $matches)) {
+		$rsp = msg_approve($matches[1]);
+		if ($rsp == OK) {
+			$msg = "Sent message {$matches[1]}.";
+		} else if ($rsp == E_MSG_NOT_FOUND) {
+			$msg = "Oops, couldn't find message rx {$matches[1]}.";
+		} else if ($rsp == E_MSG_SENDER_NOT_FOUND) {
+			$msg = "Oops, sender for message rx {$matches[1]} not found.";
+		} else if ($rsp == E_MSG_ALREADY_APPROVED) {
+			$msg = null;
+		} else {
+			$msg = "Oops, couldn't approve rx {$matches[1]}.";
+		}
+	} else if (usr_is_admin($usr) &&
+	           preg_match('/(un)?ban (.+)$/', $cmd, $matches)) {
+		$ban_usr = usr_get_by_name($matches[2]);
+		if (! $ban_usr) {
+			$msg = "Couldn't find user {$matches[2]}.";
+		} else {
+			$ban_active = ($matches[1] == 'un') ? false : true;
+			$rsp = usr_set_ban($ban_usr, $ban_active);
+			if ($rsp == OK) {
+				if ($ban_active) {
+					$msg = "Banned user {$ban_usr->name}.";
+				} else {
+					$msg = "Unbanned user {$ban_usr->name}.";
+				}
+			} else {
+				$msg = "Oops, couldn't ban user {$ban_usr}.";
+			}
+		}
 	} else {
-		// This isn't a command we know about
-		return false;
+		$msg = "Sorry, that command didn't work for some reason.";
 	}
 
-	msg_tx($rx_id, $usr->id, $msg, "send now");
+	if (! empty($msg)) {
+		msg_tx($rx_id, $usr->id, $msg, "send now");
+	}
 	return true;
+}
+
+function msg_approve($id) {
+	$db = db_setup();
+	$query = $db->prepare("
+		SELECT *
+		FROM rx
+		WHERE id = ?
+	");
+	$query->execute(array(
+		$id
+	));
+	$rx = $query->fetchObject();
+	if (! $rx) {
+		return E_MSG_NOT_FOUND;
+	}
+
+	$query = $db->prepare("
+		SELECT *
+		FROM tx
+		WHERE rx_id = ?
+	");
+	$query->execute(array(
+		$id
+	));
+	$exists = $query->fetchObject();
+	if (! empty($exists)) {
+		return E_MSG_ALREADY_APPROVED;
+	}
+
+	$query = $db->prepare("
+		SELECT *
+		FROM usr
+		WHERE id = ?
+	");
+	$query->execute(array(
+		$rx->usr_id
+	));
+	$usr = $query->fetchObject();
+	if (! empty($usr)) {
+		return E_MSG_SENDER_NOT_FOUND;
+	}
+
+	// Ok, looks good, send it out!
+	msg_chat($usr, $rx_id);
+}
+
+function msg_chat($usr, $rx_id) {
+	if ($usr->status == 'banned') {
+		$banned_msg = msg_signed_format($usr, "[banned] {$_POST['Body']}");
+		msg_admin_tx($rx_id, $usr, $banned_msg);
+		return E_MSG_USER_BANNED;
+	}
+	$channel_msg = "$usr->name: {$_POST['Body']}";
+	msg_add_to_channel($rx_id, $usr->id, $channel_msg);
+	$active_usrs = usr_get_active($usr);
+	$msg = msg_signed_format($usr, $_POST['Body']);
+	foreach ($active_usrs as $tx_usr_id) {
+		msg_tx($rx_id, $tx_usr_id, $msg);
+	}
+	return OK;
 }
 
 function msg_add_to_channel($rx_id, $usr_id, $msg) {

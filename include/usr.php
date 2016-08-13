@@ -73,6 +73,19 @@ function usr_get_by_phone($phone) {
 	return $usr;
 }
 
+function usr_get_by_name($name) {
+	$db = db_setup();
+	$query = $db->prepare("
+		SELECT *
+		FROM usr
+		WHERE name = ?
+	");
+	$query->execute(array(
+		$name
+	));
+	return $query->fetchObject();
+}
+
 function usr_get_context($usr) {
 	return $usr->context;
 }
@@ -116,7 +129,7 @@ function usr_normalize_phone($phone) {
 	return "+$phone";
 }
 
-function usr_set_name($usr, $name) {
+function usr_set_name($usr, $rx_id, $name) {
 	$name = trim($name);
 	if (! preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
 		return E_USR_NAME_FORMAT;
@@ -146,8 +159,38 @@ function usr_set_name($usr, $name) {
 		$name,
 		$usr->id
 	));
+
+	msg_admin_tx($rx_id, $usr, "[$usr->name is now known as $name]");
+
 	$usr->name = $name;
+
 	return OK;
+}
+
+function usr_set_status($usr, $status) {
+	$db = db_setup();
+	$query = $db->prepare("
+		UPDATE usr
+		SET status = ?
+		WHERE id = ?
+	");
+	$query->execute(array(
+		$status,
+		$usr->id
+	));
+}
+
+function usr_set_ban($usr, $ban_active = true) {
+	if ($ban_active) {
+		usr_set_status($usr, 'banned');
+	} else {
+		usr_set_status($usr, 'user');
+	}
+	return OK;
+}
+
+function usr_is_admin($usr) {
+	return ($usr->status == 'admin');
 }
 
 function usr_set_mute($usr, $name, $mute) {
@@ -230,6 +273,25 @@ function usr_get_active($usr) {
 		$active[] = $id;
 	}
 	return $active;
+}
+
+function usr_get_admins($usr) {
+	$db = db_setup();
+	$query = $db->prepare("
+		SELECT id
+		FROM usr
+		WHERE id != ?
+		  AND context = 'chat'
+		  AND status = 'admin'
+	");
+	$query->execute(array(
+		$usr->id
+	));
+	$admins = array();
+	while ($id = $query->fetchColumn(0)) {
+		$admins[] = $id;
+	}
+	return $admins;
 }
 
 function usr_check_if_muted($tx) {

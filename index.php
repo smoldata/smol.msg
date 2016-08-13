@@ -37,12 +37,24 @@ function normalize_phone_number($phone) {
 					</div>
 				</div>
 				<textarea name="msg" placeholder="Type a message here, then press [return]" cols="80" rows="3"></textarea>-->
+				<!--<div class="relative">
+					<div id="about">
+						<div class="relative">
+							<a href="#" class="about-link">close</a>
+							<h1>Heading</h1>
+							<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+							<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+							<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+						</div>
+					</div>
+				</div>-->
 				<p class="sms-only">
 					<?php if (! empty($_GET['eo1'])) { ?>
 						SMS <strong><?php echo $phone_number; ?></strong> to join the chat.
 						<span class="website"><?php echo $website_url; ?></span>
 					<?php } else { ?>
-						SMS <a href="sms:<?php echo normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to join the chat.
+						SMS <a href="sms:<?php echo normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to chat.
+						<!--<a href="#about" class="about-link">About</a>-->
 					<?php } ?>
 				</p>
 			</form>

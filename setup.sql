@@ -27,6 +27,7 @@ CREATE TABLE `usr` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `phone` varchar(32) NOT NULL DEFAULT '',
   `name` varchar(16) DEFAULT NULL,
+  `status` varchar(255) DEFAULT 'user',
   `context` varchar(255) DEFAULT NULL,
   `joined` datetime DEFAULT NULL,
   `active` datetime DEFAULT NULL,
