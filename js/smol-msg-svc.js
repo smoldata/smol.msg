@@ -66,7 +66,7 @@ jQuery(document).ready(function($) {
 	function checkTimeMarker(msgTimestamp) {
 		var now = new Date();
 		var usrOffset = (new Date()).getTimezoneOffset() * 60000;
-		var serverOffset = -4 * 60000;
+		var serverOffset = -4 * 60 * 60000;
 		var msgTime = new Date(msgTimestamp * 1000 + usrOffset - serverOffset);
 
 		var timeDiff = msgTime.getTime() - timeMarker;
