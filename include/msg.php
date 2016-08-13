@@ -285,6 +285,10 @@ function msg_command($usr, $rx_id, $cmd) {
 		return false;
 	}
 	$cmd = substr($cmd, 1);
+	
+	if (DEBUG) {
+		echo "cmd: $cmd\n";
+	}
 
 	if ($cmd == 'help') {
 		$msg = "/stop to leave\n/name [name] to change your name\n/invite [phone] to invite a friend\n/mute [name] to mute someone\n/website for archives URL\n/help [cmd] for more";
@@ -376,6 +380,11 @@ function msg_command($usr, $rx_id, $cmd) {
 }
 
 function msg_approve($id) {
+	
+	if (DEBUG) {
+		echo "msg_approve($id)\n";
+	}
+	
 	$db = db_setup();
 	$query = $db->prepare("
 		SELECT *
@@ -387,6 +396,9 @@ function msg_approve($id) {
 	));
 	$rx = $query->fetchObject();
 	if (! $rx) {
+		if (DEBUG) {
+			echo "E_MSG_NOT_FOUND\n";
+		}
 		return E_MSG_NOT_FOUND;
 	}
 
@@ -400,6 +412,9 @@ function msg_approve($id) {
 	));
 	$exists = $query->fetchObject();
 	if (! empty($exists)) {
+		if (DEBUG) {
+			echo "E_MSG_ALREADY_APPROVED\n";
+		}
 		return E_MSG_ALREADY_APPROVED;
 	}
 
@@ -413,7 +428,15 @@ function msg_approve($id) {
 	));
 	$usr = $query->fetchObject();
 	if (! empty($usr)) {
+		if (DEBUG) {
+			echo "E_MSG_SENDER_NOT_FOUND\n";
+		}
 		return E_MSG_SENDER_NOT_FOUND;
+	}
+
+	if (DEBUG) {
+		echo "msg_chat(usr, $rx_id)\n";
+		print_r($usr);
 	}
 
 	// Ok, looks good, send it out!
