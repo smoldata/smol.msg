@@ -443,7 +443,7 @@ function msg_approve($id) {
 	}
 
 	// Ok, looks good, send it out!
-	msg_chat($usr, $rx->id);
+	msg_chat($usr, $id);
 }
 
 function msg_chat($usr, $rx_id) {
