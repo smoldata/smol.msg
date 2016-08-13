@@ -438,12 +438,12 @@ function msg_approve($id) {
 	}
 
 	if (DEBUG) {
-		echo "msg_chat(usr, $rx_id)\n";
+		echo "msg_chat(usr, $rx->id)\n";
 		print_r($usr);
 	}
 
 	// Ok, looks good, send it out!
-	msg_chat($usr, $rx_id);
+	msg_chat($usr, $rx->id);
 }
 
 function msg_chat($usr, $rx_id) {
