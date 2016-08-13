@@ -430,7 +430,7 @@ function msg_approve($id) {
 		$rx->usr_id
 	));
 	$usr = $query->fetchObject();
-	if (! empty($usr)) {
+	if (empty($usr)) {
 		if (DEBUG) {
 			echo "E_MSG_SENDER_NOT_FOUND\n";
 		}
