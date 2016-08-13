@@ -341,7 +341,7 @@ function msg_command($usr, $rx_id, $cmd) {
 	           preg_match('/approve (\d+)$/', $cmd, $matches)) {
 		$rsp = msg_approve($matches[1]);
 		if ($rsp == OK) {
-			$msg = "Sent message {$matches[1]}.";
+			$msg = null;
 		} else if ($rsp == E_MSG_NOT_FOUND) {
 			$msg = "Oops, couldn't find message rx {$matches[1]}.";
 		} else if ($rsp == E_MSG_SENDER_NOT_FOUND) {
@@ -447,19 +447,38 @@ function msg_approve($id) {
 }
 
 function msg_chat($usr, $rx_id) {
+	$msg_body = msg_body($rx_id);
 	if ($usr->status == 'banned') {
-		$banned_msg = msg_signed_format($usr, "[banned] {$_POST['Body']}");
+		$banned_msg = msg_signed_format($usr, "[banned] $msg_body");
 		msg_admin_tx($rx_id, $usr, $banned_msg);
 		return E_MSG_USER_BANNED;
 	}
-	$channel_msg = "$usr->name: {$_POST['Body']}";
+	$channel_msg = "$usr->name: $msg_body";
 	msg_add_to_channel($rx_id, $usr->id, $channel_msg);
 	$active_usrs = usr_get_active($usr);
-	$msg = msg_signed_format($usr, $_POST['Body']);
+	$msg = msg_signed_format($usr, $msg_body);
 	foreach ($active_usrs as $tx_usr_id) {
 		msg_tx($rx_id, $tx_usr_id, $msg);
 	}
 	return OK;
+}
+
+function msg_body($rx_id) {
+	$db = db_setup();
+	$query = $db->prepare("
+		SELECT *
+		FROM rx
+		WHERE id = ?
+	");
+	$query->execute(array(
+		$rx_id
+	));
+	$msg = $query->fetchObject();
+	if ($msg) {
+		return $msg->msg;
+	} else {
+		return null;
+	}
 }
 
 function msg_add_to_channel($rx_id, $usr_id, $msg) {
