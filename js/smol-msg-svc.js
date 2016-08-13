@@ -301,7 +301,7 @@ jQuery(document).ready(function($) {
 	$('input[name=avatar_icon]').val(avatar.icon);
 	//$('form').css('background-color', avatar.color);
 	
-	var h = $('form').height();
+	var h = 40; //$('form').height();
 	$('#msgs').css('padding-bottom', h);
 	$('#msgs').css('min-height', 'calc(100vh - ' + h + 'px)');
 	
