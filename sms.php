@@ -28,7 +28,7 @@ if (! empty($_POST['Body']) &&
 
 	if (! msg_command($usr, $rx_id, $_POST['Body'])) {
 		if ($context == 'intro') {
-			$msg = msg_signed_format($usr, "{$_POST['Body']}\n[/approve {$rx_id} or /ban {$usr->name}]");
+			$msg = msg_signed_format($usr, "{$_POST['Body']}\n[/approve {$rx_id}]");
 			$admin_count = msg_admin_tx($rx_id, $usr, $msg);
 			usr_set_context($usr, 'name');
 			if ($admin_count == 0) {
