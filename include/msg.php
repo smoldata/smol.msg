@@ -74,10 +74,11 @@ function msg_tx($rx_id, $usr_id, $msg, $send_now = false) {
 function msg_admin_tx($rx_id, $sender, $msg) {
 
 	if (is_array($msg)) {
+		$count = 0;
 		foreach ($msg as $msg_part) {
-			msg_admin_tx($rx_id, $sender, $msg_part);
+			$count += msg_admin_tx($rx_id, $sender, $msg_part);
 		}
-		return;
+		return $count;
 	}
 
 	$db = db_setup();
