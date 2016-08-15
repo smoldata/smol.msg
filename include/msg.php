@@ -56,7 +56,7 @@ function msg_tx($rx_id, $usr_id, $msg, $send_now = false) {
 	));
 	$tx_id = $db->lastInsertId();
 	if (! empty($send_now)) {
-		$tx_batch = msg_batch_uuid();
+		$tx_batch = util_uuid();
 		$query = $db->prepare("
 			UPDATE tx
 			SET transmit_batch = ?
@@ -103,7 +103,7 @@ function msg_admin_tx($rx_id, $sender, $msg) {
 
 function msg_send_pending() {
 	$db = db_setup();
-	$tx_batch = msg_batch_uuid();
+	$tx_batch = util_uuid();
 
 	$query = $db->prepare("
 		UPDATE tx
@@ -338,6 +338,16 @@ function msg_command($usr, $rx_id, $cmd) {
 	} else if (preg_match('/invite (.+)$/', $cmd, $matches)) {
 		$phone = $matches[1];
 		usr_invite($usr, $rx_id, $phone);
+	} else if (preg_match('/login (\d+)$/', $cmd, $matches)) {
+		$login_code = $matches[1];
+		$rsp = usr_complete_login($usr, $login_code);
+		if ($rsp == OK) {
+			$msg = null;
+		} else if ($rsp == E_USR_LOGIN_EXPIRED) {
+			$msg = "Oops, that login code expired. Please try again!";
+		} else {
+			$msg = "Oops, that login code didn't match any on record.";
+		}
 	} else if (usr_is_admin($usr) &&
 	           preg_match('/approve (\d+)$/', $cmd, $matches)) {
 		$rsp = msg_approve($matches[1]);
@@ -496,31 +506,4 @@ function msg_add_to_channel($rx_id, $usr_id, $msg) {
 		$msg,
 		$created
 	));
-}
-
-function msg_batch_uuid() {
-	
-	# https://secure.php.net/manual/en/function.uniqid.php#94959
-
-	# 32 bits for "time_low"
-	# 16 bits for "time_mid"
-		# 16 bits for "time_hi_and_version", four most significant bits holds version number 4
-	# 16 bits, 8 bits for "clk_seq_hi_res", 8 bits for "clk_seq_low", two most significant bits holds zero and one for variant DCE1.1
-	# 48 bits for "node"
-
-	$tl1 = mt_rand(0, 0xffff);
-	$tl2 = mt_rand(0, 0xffff);
-
-	$tm = mt_rand(0, 0xffff);
-	$th = mt_rand(0, 0xffff);
-
-	$cs = mt_rand(0, 0x3fff) | 0x8000;
-
-	$nd1 = mt_rand(0, 0xffff);
-	$nd2 = mt_rand(0, 0xffff);
-	$nd3 = mt_rand(0, 0xffff);
-
-	$fmt = "%04x%04x-%04x-%04x-%04x-%04x%04x%04x";
-
-	return sprintf($fmt, $tl1, $tl2, $tm, $th, $cs, $nd1, $nd2, $nd3);
 }

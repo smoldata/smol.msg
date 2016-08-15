@@ -1,13 +1,7 @@
 <?php
 
-include 'config.php';
+include 'include/init.php';
 $topic = 'smol msg svc';
-
-function normalize_phone_number($phone) {
-	$phone = preg_replace('/\D/', '', $phone);
-	$phone = "+1$phone";
-	return $phone;
-}
 
 ?>
 <!DOCTYPE html>
@@ -54,7 +48,7 @@ function normalize_phone_number($phone) {
 						<span class="website"><?php echo $website_url; ?></span>
 						<br class="clear">
 					<?php } else { ?>
-						<span class="prompt">SMS <a href="sms:<?php echo normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to chat.</span>
+						<span class="prompt">SMS <a href="sms:<?php echo util_normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to chat.</span>
 						<!--<a href="#about" class="about-link">About</a>-->
 						<br class="clear">
 					<?php } ?>

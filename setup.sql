@@ -18,6 +18,7 @@ CREATE TABLE `tx` (
   `ok` tinyint(4) DEFAULT NULL,
   `post_json` text CHARACTER SET utf8mb4,
   `response_json` text CHARACTER SET utf8mb4,
+  `transmit_batch` varchar(255) DEFAULT NULL,
   `transmitted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -55,3 +56,11 @@ CREATE TABLE `channel` (
   `avatar_image` text,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `usr_session`;
+CREATE TABLE `usr_session` (
+  `uuid` varchar(255) DEFAULT NULL,
+  `login_code` int(11) DEFAULT NULL,
+  `usr_id` int(11) unsigned NOT NULL,
+  PRIMARY KEY (`usr_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

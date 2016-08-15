@@ -1,18 +1,6 @@
 <?php
 
-define('OK', 0);
-if (! empty($_GET['debug'])) {
-	define('DEBUG', true);
-} else {
-	define('DEBUG', false);
-}
-
-//$last_rx = print_r($_POST, true);
-//file_put_contents('last-msg.txt', $last_rx);
-
-include 'include/db.php';
-include 'include/msg.php';
-include 'include/usr.php';
+include 'include/init.php';
 
 if (! empty($_POST['Body']) &&
     ! empty($_POST['From'])) {

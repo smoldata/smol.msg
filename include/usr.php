@@ -11,6 +11,10 @@ define('E_USR_NOT_MUTED', 6);
 define('E_USR_CANT_MUTE_SELF', 7);
 
 define('E_USR_INVALID_PHONE', 8);
+define('E_USR_LOGIN_INVALID', 9);
+define('E_USR_LOGIN_EXPIRED', 10);
+
+define('USR_LOGIN_TTL', 15 * 60 * 60);
 
 $usr_errors = array(
 	E_USR_NAME_FORMAT => 'Sorry, please keep it to 16 letters, numbers, or _ (no spaces).',
@@ -71,6 +75,19 @@ function usr_get_by_phone($phone) {
 		$usr = $query->fetchObject();
 	}
 	return $usr;
+}
+
+function usr_get_by_id($id) {
+	$db = db_setup();
+	$query = $db->prepare("
+		SELECT *
+		FROM usr
+		WHERE id = ?
+	");
+	$query->execute(array(
+		$id
+	));
+	return $query->fetchObject();
 }
 
 function usr_get_by_name($name) {
@@ -376,4 +393,78 @@ function usr_invite($usr, $rx_id, $phone) {
 		$msg = "Hello! $usr->name has invited you to an SMS chat. Reply \"ok\" to join.";
 		msg_tx($rx_id, $invited_id, $msg, "send now");
 	}
+}
+
+function usr_create_login() {
+
+	include 'config.php';
+	$db = db_setup();
+
+	$login_code = mt_rand(0, 999999);
+	$login_code = str_pad("$login_code", 6, '0', STR_PAD_LEFT);
+	$created = date('Y-m-d H:i:s');
+
+	$query = $db->prepare("
+		INSERT INTO usr_login
+		(login_code, created)
+		VALUES (?, ?)
+	");
+	$query->execute(array(
+		$login_code,
+		$created
+	));
+
+	$rsp = array(
+		'ok' => 1,
+		'login_code' => $login_code
+	);
+	return $rsp;
+}
+
+function usr_delete_login($login_code) {
+	$db = db_setup();
+	$query = $db->prepare("
+		DELETE FROM usr_login
+		WHERE login_code = ?
+	");
+	$query->execute(array(
+		$login_code
+	));
+}
+
+function usr_get_login($login_code) {
+
+	$db = db_setup();
+
+	$query = $db->prepare("
+		SELECT *
+		FROM usr_login
+		WHERE login_code = ?
+	");
+	$query->execute(array(
+		$login_code
+	));
+	return $query->fetchObject();
+}
+
+function usr_complete_login($usr, $login_code) {
+	$login = usr_get_login($login_code);
+	$ttl_cutoff = time() - USR_LOGIN_TTL;
+	if (empty($login)) {
+		return E_USR_LOGIN_INVALID;
+	} else if (strtotime($login->created) < $ttl_cutoff) {
+		return E_USR_LOGIN_EXPIRED;
+	}
+	
+	$db = db_setup();
+	$query = $db->prepare("
+		UPDATE usr_login
+		SET usr_id = ?
+		WHERE login_code = ?
+	");
+	$query->execute(array(
+		$usr->id,
+		$login_code
+	));
+	return OK;
 }
