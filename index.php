@@ -33,7 +33,7 @@ $topic = 'smol msg svc';
 				<div class="relative">
 					<a href="#" class="logout">Logout</a>
 				</div>
-				<textarea class="msg" name="msg" placeholder="Type a message here, then press [return]" cols="80" rows="3"></textarea>
+				<textarea class="msg" name="msg" placeholder="Type your message here, then press [return]" cols="80" rows="3"></textarea>
 				
 				<!--<div class="relative">
 					<div id="about">

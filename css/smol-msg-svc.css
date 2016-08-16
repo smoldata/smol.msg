@@ -251,7 +251,9 @@ body.logged-in textarea.msg {
 	font: 12px/20px menlo, monospace;
 	position: absolute;
 	right: 1em;
-	top: 10px;
+	top: -20px;
+	color: #808080;
+	text-decoration: none;
 }
 
 body.logged-in .logout {
