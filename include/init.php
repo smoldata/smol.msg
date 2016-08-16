@@ -14,3 +14,5 @@ include __DIR__ . '/db.php';
 include __DIR__ . '/msg.php';
 include __DIR__ . '/usr.php';
 include __DIR__ . '/util.php';
+
+register_shutdown_function('msg_send_pending');

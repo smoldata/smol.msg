@@ -1,46 +1,38 @@
 <?php
 
-if (!empty($_POST['msg'])) {
-	
-	// Set the time, if we're off by more than 15sec of the client
-	if (abs(time() - $_POST['time']) > 15) {
-		$date = date('Y-m-d H:i:s', $_POST['time']);
-		exec("/bin/date -s \"$date\"");
+include 'include/init.php';
+
+$rsp = array(
+	'ok' => 0,
+	'error' => 'Hmm. Something strange and unexpected happened.'
+);
+
+if (! empty($_POST['msg']) &&
+    ! empty($_SESSION['usr_id'])) {
+	$usr = usr_get_by_id($_SESSION['usr_id']);
+	$rx_id = msg_rx($usr, $_POST['msg']);
+	if (! $rx_id) {
+		die("Error: could not rx {$_POST['msg']}");
 	}
-	
-	$id = number_format(microtime(true), 4, '.', '');
-	$filename = "msg/$id.json";
-	$color = '#ccc';
-	if (preg_match('/^#[0-9a-f]{6}$/', $_POST['avatar_color'])) {
-		$color = $_POST['avatar_color'];
+	$context = usr_get_context($usr);
+	if (msg_command($usr, $rx_id, $_POST['msg'])) {
+		$rsp = array(
+			'ok' => 1,
+			'command' => 1
+		);
+	} else {
+		$id = msg_chat($usr, $rx_id);
+		$channel_msg = htmlentities("$usr->name: {$_POST['msg']}");
+		$rsp = array(
+			'ok' => 1,
+			'id' => $id,
+			'msg' => $channel_msg,
+			'timestamp' => time()
+		);
 	}
-	$position = '0px 0px';
-	if (preg_match('/^-?\d+px -?\d+px$/', $_POST['avatar_position'])) {
-		$position = $_POST['avatar_position'];
-	}
-	$icon = 'white';
-	if ($_POST['avatar_icon'] == 'black') {
-		$icon = 'black';
-	}
-	$img = $_POST['img'];
-	if (substr($img, 0, 22) != 'data:image/jpeg;base64') {
-		$img = '';
-	}
-	
-	$msg = json_encode(array(
-		'id'  => $id,
-		'msg' => htmlentities($_POST['msg'], ENT_HTML5, 'UTF-8'),
-		'img' => $img,
-		'ip'  => $_SERVER['REMOTE_ADDR'],
-		'avatar' => array(
-			'color' => $color,
-			'position' => $position,
-			'icon' => $icon
-		)
-	));
-	file_put_contents($filename, $msg);
-	header('Content-Type: application/json');
-	echo $msg;
 }
+
+header('Content-Type: application/json');
+echo json_encode($rsp);
 
 ?>

@@ -465,13 +465,13 @@ function msg_chat($usr, $rx_id) {
 		return E_MSG_USER_BANNED;
 	}
 	$channel_msg = "$usr->name: $msg_body";
-	msg_add_to_channel($rx_id, $usr->id, $channel_msg);
+	$chat_id = msg_add_to_channel($rx_id, $usr->id, $channel_msg);
 	$active_usrs = usr_get_active($usr);
 	$msg = msg_signed_format($usr, $msg_body);
 	foreach ($active_usrs as $tx_usr_id) {
 		msg_tx($rx_id, $tx_usr_id, $msg);
 	}
-	return OK;
+	return $chat_id;
 }
 
 function msg_body($rx_id) {
@@ -506,4 +506,5 @@ function msg_add_to_channel($rx_id, $usr_id, $msg) {
 		$msg,
 		$created
 	));
+	return $db->lastInsertId();
 }

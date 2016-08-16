@@ -69,6 +69,7 @@ form {
 	color: #808080;
 	margin-bottom: 0;
 	max-width: 750px;
+	transition: bottom 0.25s ease-out;
 }
 
 body.eo1 form {
@@ -135,9 +136,10 @@ textarea {
 	width: 100%;
 	height: 62px;
 	border: none;
-	padding: 10px 10px 10px 70px;
+	padding: 10px 1em;
 	margin: 3px 0;
-	background: rgba(255, 255, 255, 0.8);
+	color: #ccc;
+	background: #222;
 	border-radius: 0;
 	-webkit-appearance: none;
 }
@@ -213,4 +215,44 @@ strong {
 
 .clear {
 	clear: both;
+}
+
+.login-link {
+	float: right;
+}
+
+.login-info {
+	position: absolute;
+	top: 0;
+	left: 0;
+	background: #333;
+	width: 100%;
+	font: 12px/20px menlo, monospace;
+	padding: 10px 1em;
+	margin: 0;
+}
+
+body.logged-in .sms-only,
+body.logged-in .login-info {
+	display: none;
+}
+
+textarea.msg {
+	display: none;
+}
+
+body.logged-in textarea.msg {
+	display: block;
+}
+
+.logout {
+	display: none;
+	font: 12px/20px menlo, monospace;
+	position: absolute;
+	right: 1em;
+	top: 10px;
+}
+
+body.logged-in .logout {
+	display: inline;
 }

@@ -10,7 +10,8 @@ jQuery(document).ready(function($) {
 	var liveAvatar = !!window.localStorage.liveAvatar;
 	var timeMarker = null;
 	var userMediaStream = null;
-	var pollingInterval = 5000;
+	var msgPollingInterval = 500000;
+	var loginPollingInterval = 5000;
 
 	function updateScroll() {
 		updatingScroll = true;
@@ -252,9 +253,13 @@ jQuery(document).ready(function($) {
 		$.ajax('submit.php', {
 			method: 'POST',
 			data: $('form').serialize(),
-			success: function(msg) {
-				// Show the current message
-				displayMessage(msg);
+			success: function(rsp) {
+				
+				if (rsp.ok &&
+				    rsp.id) {
+					// Show the current message
+					displayMessage(rsp);
+				}
 
 				// Reset the inputs to empty values
 				$('textarea[name=msg]').val('');
@@ -287,7 +292,7 @@ jQuery(document).ready(function($) {
 				updateScroll();
 			}
 		});
-	}, pollingInterval);
+	}, msgPollingInterval);
 
 	if (liveAvatar && hasGetUserMedia()) {
 		showLiveAvatar();
@@ -317,5 +322,63 @@ jQuery(document).ready(function($) {
 		}
 	});
 	
+	$('.login-link').click(function(e) {
+		e.preventDefault();
+		$('.login-info').toggleClass('visible');
+		var h = $('.login-info').height() + 20;
+		if ($('.login-info').hasClass('visible')) {
+			$('form').css('bottom', h);
+		} else {
+			$('form').css('bottom', 0);
+		}
+	});
 	
+	$('.login-start').click(function(e) {
+		e.preventDefault();
+		var loginInterval = null;
+		
+		var loginComplete = function(rsp) {
+			clearInterval(loginInterval);
+			$('.login-info').html('Success, you now logged in as ' + rsp.usr_name + '. <a href="#" class="login-close">Start chatting</a>');
+			$('.login-close').click(function(e) {
+				e.preventDefault();
+				setTimeout(function() {
+					$('body').addClass('logged-in');
+				}, 250);
+				$('form').css('bottom', 0);
+			});
+		};
+		
+		$('.login-info').html('Loading...');
+		$.post('/login.php', {
+			login: 1
+		}, function(rsp) {
+			if (rsp.usr_name) {
+				loginComplete(rsp);
+			} else if (rsp.login_code) {
+				$('.login-info').html('Send <strong>/login ' + rsp.login_code + '</strong> to <a href="sms://' + rsp.phone_normalized + '">' + rsp.phone + '</a>');
+				loginInterval = setInterval(function() {
+					$.post('/login.php', {
+						check_for_usr: 1
+					}, function(rsp) {
+						if (rsp.usr_name) {
+							loginComplete(rsp);
+						}
+					});
+				}, loginPollingInterval);
+			} else if (rsp.error) {
+				$('.login-info').html('Error: ' + rsp.error);
+			} else {
+				$('.login-info').html('Hmm. Something unexpected happened. Reload and try again?');
+			}
+		});
+	});
+	
+	$('.logout').click(function(e) {
+		e.preventDefault();
+		$('body').removeClass('logged-in');
+		$.post('/logout.php', {
+			logout: 1
+		});
+	});
 });

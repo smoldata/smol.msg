@@ -4,7 +4,7 @@ include 'include/init.php';
 
 $rsp = array(
 	'ok' => 0,
-	'error' => 'Something strange happened.'
+	'error' => 'Hmm. Something strange and unexpected happened.'
 );
 
 if (! empty($_SESSION['usr_id'])) {
@@ -38,6 +38,7 @@ if (! empty($_SESSION['usr_id'])) {
 		// Hey, we are logged in!
 		$usr = usr_get_by_id($login->usr_id);
 		$_SESSION['usr_id'] = $login->usr_id;
+		$_SESSION['login_code'] = null;
 		usr_delete_login($login->login_code);
 		$rsp = array(
 			'ok' => 1,
@@ -46,10 +47,14 @@ if (! empty($_SESSION['usr_id'])) {
 	} else {
 		// Ok, it still works, but we're still waiting.
 		$rsp = array(
-			'ok' => 1
+			'ok' => 1,
+			'login_code' => $_SESSION['login_code']
 		);
 	}
 }
+
+$rsp['phone'] = $phone_number;
+$rsp['phone_normalized'] = util_normalize_phone_number($phone_number);
 
 header('Content-Type: application/json');
 echo json_encode($rsp);

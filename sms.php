@@ -59,8 +59,3 @@ if (! empty($_POST['Body']) &&
 		usr_update_active_time($usr);
 	}
 }
-
-if (DEBUG) {
-	echo "Sending pending messages.\n";
-}
-msg_send_pending();

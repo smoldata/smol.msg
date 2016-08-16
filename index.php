@@ -16,7 +16,7 @@ $topic = 'smol msg svc';
 		<title><?php echo $topic; ?></title>
 		<link rel="stylesheet" href="css/smol-msg-svc.css">
 	</head>
-	<body<?php if (! empty($_GET['eo1'])) { ?> class="eo1"<?php } ?>>
+	<body class="<?php if (! empty($_GET['eo1'])) { ?> eo1<?php } if (! empty($_SESSION['usr_id'])) { ?> logged-in<?php } ?>">
 		<div id="page">
 			<div id="msgs"></div>
 			<form action="submit.php" method="post">
@@ -29,8 +29,12 @@ $topic = 'smol msg svc';
 					<div class="relative">
 						<div class="icon"></div>
 					</div>
+				</div>-->
+				<div class="relative">
+					<a href="#" class="logout">Logout</a>
 				</div>
-				<textarea name="msg" placeholder="Type a message here, then press [return]" cols="80" rows="3"></textarea>-->
+				<textarea class="msg" name="msg" placeholder="Type a message here, then press [return]" cols="80" rows="3"></textarea>
+				
 				<!--<div class="relative">
 					<div id="about">
 						<div class="relative">
@@ -49,10 +53,15 @@ $topic = 'smol msg svc';
 						<br class="clear">
 					<?php } else { ?>
 						<span class="prompt">SMS <a href="sms:<?php echo util_normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to chat.</span>
-						<!--<a href="#about" class="about-link">About</a>-->
+						<a href="#login" class="login-link">Login</a>
 						<br class="clear">
 					<?php } ?>
 				</p>
+				<div class="relative">
+					<p class="login-info">
+						You can send messages via this website, but you will need to login first via SMS. <a href="#" class="login-start">Ok, let’s do it!</a>
+					</p>
+				</div>
 			</form>
 		</div>
 		<script src="js/jquery-1.12.1.min.js"></script>
