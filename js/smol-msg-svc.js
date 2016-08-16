@@ -317,7 +317,7 @@ jQuery(document).ready(function($) {
 	$('input[name=avatar_icon]').val(avatar.icon);
 	//$('form').css('background-color', avatar.color);
 	
-	var h = $('form').height() + 10;
+	var h = $('form').height();
 	$('#msgs').css('padding-bottom', h);
 	$('#msgs').css('min-height', 'calc(100vh - ' + h + 'px)');
 	
@@ -353,7 +353,7 @@ jQuery(document).ready(function($) {
 				e.preventDefault();
 				setTimeout(function() {
 					$('body').addClass('logged-in');
-					var h = $('form').height() + 10;
+					var h = $('form').height();
 					$('#msgs').css('padding-bottom', h);
 					$('#msgs').css('min-height', 'calc(100vh - ' + h + 'px)');
 				}, 250);
