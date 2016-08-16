@@ -306,10 +306,12 @@ function msg_command($usr, $rx_id, $cmd) {
 	    ! (is_numeric($cmd) && strlen($cmd) == 5)) {
 		return false;
 	}
-	$cmd = substr($cmd, 1);
 	
 	if (is_numeric($cmd)) {
 		$cmd = "login $cmd";
+	} else {
+		// Strip the leading slash
+		$cmd = substr($cmd, 1);
 	}
 
 	if (DEBUG) {
