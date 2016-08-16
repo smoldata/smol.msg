@@ -369,7 +369,7 @@ function msg_command($usr, $rx_id, $cmd) {
 		$login_code = $matches[1];
 		$rsp = usr_complete_login($usr, $login_code);
 		if ($rsp == OK) {
-			$msg = null;
+			$msg = "You are now logged in on $website_url.";
 		} else if ($rsp == E_USR_LOGIN_EXPIRED) {
 			$msg = "Oops, that login code expired. Please try again!";
 		} else {
