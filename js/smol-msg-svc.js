@@ -389,6 +389,9 @@ jQuery(document).ready(function($) {
 	$('.logout').click(function(e) {
 		e.preventDefault();
 		$('body').removeClass('logged-in');
+		var h = $('form').height();
+		$('#msgs').css('padding-bottom', h);
+		$('#msgs').css('min-height', 'calc(100vh - ' + h + 'px)');
 		$.post('/logout.php', {
 			logout: 1
 		});
