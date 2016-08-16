@@ -156,9 +156,6 @@ textarea:focus {
 }
 
 .sms-only {
-	position: absolute;
-	left: 0;
-	bottom: 0;
 	width: 100%;
 	font: 12px/20px menlo, monospace;
 	padding: 10px 1em;
