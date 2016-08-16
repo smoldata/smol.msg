@@ -427,8 +427,8 @@ function usr_create_login() {
 	include 'config.php';
 	$db = db_setup();
 
-	$login_code = mt_rand(0, 999999);
-	$login_code = str_pad("$login_code", 6, '0', STR_PAD_LEFT);
+	$login_code = mt_rand(0, 99999);
+	$login_code = str_pad("$login_code", 5, '0', STR_PAD_LEFT);
 	$created = date('Y-m-d H:i:s');
 
 	$query = $db->prepare("

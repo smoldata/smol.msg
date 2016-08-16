@@ -34,7 +34,7 @@ if (! empty($_POST['Body']) &&
 		} else if ($context == 'name') {
 			$rsp = usr_set_name($usr, $rx_id, $_POST['Body']);
 			if ($rsp == OK) {
-				$msg = "Reply /stop to leave, or /help for more commands. Welcome, $usr->name!";
+				$msg = "Reply /stop to leave, or /help for more commands. Read the chat archives at:\n$website_url";
 				msg_tx($rx_id, $usr->id, $msg, "send now");
 				usr_set_context($usr, 'chat');
 			} else {

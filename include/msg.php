@@ -302,11 +302,16 @@ function msg_command($usr, $rx_id, $cmd) {
 	
 	$cmd = strtolower($cmd);
 	$cmd = trim($cmd);
-	if (substr($cmd, 0, 1) != '/') {
+	if (substr($cmd, 0, 1) != '/' &&
+	    ! (is_numeric($cmd) && strlen($cmd) == 5)) {
 		return false;
 	}
 	$cmd = substr($cmd, 1);
 	
+	if (is_numeric($cmd)) {
+		$cmd = "login $cmd";
+	}
+
 	if (DEBUG) {
 		echo "cmd: $cmd\n";
 	}
@@ -355,10 +360,10 @@ function msg_command($usr, $rx_id, $cmd) {
 		}
 	} else if ($cmd == 'website') {
 		$msg = "You can read the chat archives at:\n$website_url";
-	} else if (preg_match('/invite (.+)$/', $cmd, $matches)) {
+	} else if (preg_match('/^invite (.+)$/', $cmd, $matches)) {
 		$phone = $matches[1];
 		usr_invite($usr, $rx_id, $phone);
-	} else if (preg_match('/login (\d+)$/', $cmd, $matches)) {
+	} else if (preg_match('/^login (\d+)$/', $cmd, $matches)) {
 		$login_code = $matches[1];
 		$rsp = usr_complete_login($usr, $login_code);
 		if ($rsp == OK) {
@@ -369,7 +374,7 @@ function msg_command($usr, $rx_id, $cmd) {
 			$msg = "Oops, that login code didn't match any on record.";
 		}
 	} else if (usr_is_admin($usr) &&
-	           preg_match('/approve (\d+)$/', $cmd, $matches)) {
+	           preg_match('/^approve (\d+)$/', $cmd, $matches)) {
 		$rsp = msg_approve($matches[1]);
 		if ($rsp == OK) {
 			$msg = null;

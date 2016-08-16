@@ -381,7 +381,7 @@ jQuery(document).ready(function($) {
 			if (rsp.usr_name) {
 				loginComplete(rsp);
 			} else if (rsp.login_code) {
-				$('.login-info').html('Send <strong>/login ' + rsp.login_code + '</strong> to <a href="sms://' + rsp.phone_normalized + '">' + rsp.phone + '</a>');
+				$('.login-info').html('Send <strong>' + rsp.login_code + '</strong> to <a href="sms://' + rsp.phone_normalized + '">' + rsp.phone + '</a>');
 				loginInterval = setInterval(function() {
 					$.post('/login.php', {
 						check_for_usr: 1
