@@ -10,8 +10,12 @@ jQuery(document).ready(function($) {
 	var liveAvatar = !!window.localStorage.liveAvatar;
 	var timeMarker = null;
 	var userMediaStream = null;
-	var msgPollingInterval = 15000;
-	var loginPollingInterval = 5000;
+	var msgPollingInterval = 2500;
+	var loginPollingInterval = 1500;
+
+	if ($('body').hasClass('eo1')) {
+		msgPollingInterval = 10000;
+	}
 
 	function updateScroll() {
 		updatingScroll = true;
@@ -331,6 +335,8 @@ jQuery(document).ready(function($) {
 		}
 	});
 	
+	var loginInterval = null;
+
 	$('.login-link').click(function(e) {
 		e.preventDefault();
 		$('.login-info').toggleClass('visible');
@@ -340,14 +346,21 @@ jQuery(document).ready(function($) {
 		} else {
 			$('form').css('bottom', 0);
 		}
+		if (loginInterval) {
+			clearInterval(loginInterval);
+			loginInterval = null;
+			$('.login-link').html('Login');
+		}
 	});
 	
 	$('.login-start').click(function(e) {
 		e.preventDefault();
-		var loginInterval = null;
+		
+		$('.login-link').html('Cancel');
 		
 		var loginComplete = function(rsp) {
 			clearInterval(loginInterval);
+			loginInterval = null;
 			$('.login-info').html('Success, you now logged in as ' + rsp.usr_name + '. <a href="#" class="login-close">Start chatting</a>');
 			$('.login-close').click(function(e) {
 				e.preventDefault();
