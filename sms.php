@@ -56,6 +56,6 @@ if (! empty($_POST['Body']) &&
 	}
 	
 	if ($context != 'intro') {
-		usr_update_active_time($usr);
+		usr_update_active_time($usr->id);
 	}
 }

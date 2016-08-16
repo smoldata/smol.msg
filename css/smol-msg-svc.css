@@ -241,6 +241,10 @@ textarea.msg {
 	display: none;
 }
 
+textarea.disabled {
+	color: #666;
+}
+
 body.logged-in textarea.msg {
 	display: block;
 }

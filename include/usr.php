@@ -292,6 +292,27 @@ function usr_get_active($usr) {
 	return $active;
 }
 
+function usr_get_web_active() {
+	
+	// Within the last 60 seconds
+	$recent_cutoff = date('Y-m-d H:i:s', time() - 60);
+
+	$db = db_setup();
+	$query = $db->prepare("
+		SELECT id
+		FROM usr
+		WHERE web_active > ?
+	");
+	$query->execute(array(
+		$recent_cutoff
+	));
+	$active = array();
+	while ($id = $query->fetchColumn(0)) {
+		$active[] = $id;
+	}
+	return $active;
+}
+
 function usr_get_admins($usr) {
 	$db = db_setup();
 	$query = $db->prepare("
@@ -346,17 +367,23 @@ function usr_check_if_muted($tx) {
 	return in_array($tx->sender_id, $usr_mutes[$tx->usr_id]);
 }
 
-function usr_update_active_time($usr) {
+function usr_update_active_time($usr_id, $column = 'active') {
+
+	if ($column != 'active' &&
+	    $column != 'web_active') {
+		die('usr_update_active_time called with unexpected column');
+	}
+
 	$db = db_setup();
 	$active = date('Y-m-d H:i:s');
 	$query = $db->prepare("
 		UPDATE usr
-		SET active = ?
+		SET $column = ?
 		WHERE id = ?
 	");
 	$query->execute(array(
 		$active,
-		$usr->id
+		$usr_id
 	));
 }
 

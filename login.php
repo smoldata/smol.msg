@@ -40,6 +40,7 @@ if (! empty($_SESSION['usr_id'])) {
 		$_SESSION['usr_id'] = $login->usr_id;
 		$_SESSION['login_code'] = null;
 		usr_delete_login($login->login_code);
+		usr_set_status($usr, 'chat');
 		$rsp = array(
 			'ok' => 1,
 			'usr_name' => $usr->name

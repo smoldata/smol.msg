@@ -10,7 +10,7 @@ jQuery(document).ready(function($) {
 	var liveAvatar = !!window.localStorage.liveAvatar;
 	var timeMarker = null;
 	var userMediaStream = null;
-	var msgPollingInterval = 500000;
+	var msgPollingInterval = 15000;
 	var loginPollingInterval = 5000;
 
 	function updateScroll() {
@@ -248,18 +248,25 @@ jQuery(document).ready(function($) {
 		var time = Math.round((new Date()).getTime() / 1000);
 		time += (new Date).getTimezoneOffset() * 60;
 		$('input[name=time]').val(time);
+		
+		var data = $('form').serialize();
+		$('textarea[name=msg]').addClass('disabled');
+		$('textarea[name=msg]')[0].setAttribute('disabled', 'disabled');
 
 		// Submit a message via AJAX POST
 		$.ajax('submit.php', {
 			method: 'POST',
-			data: $('form').serialize(),
+			data: data,
 			success: function(rsp) {
-				
+
 				if (rsp.ok &&
 				    rsp.id) {
 					// Show the current message
 					displayMessage(rsp);
 				}
+
+				$('textarea[name=msg]').removeClass('disabled');
+				$('textarea[name=msg]')[0].removeAttribute('disabled');
 
 				// Reset the inputs to empty values
 				$('textarea[name=msg]').val('');
@@ -268,6 +275,8 @@ jQuery(document).ready(function($) {
 				// On mobile sized screens, hide the software keyboard
 				if ($(window).width() < 600) {
 					$('textarea[name=msg]')[0].blur();
+				} else {
+					$('textarea[name=msg]')[0].focus();
 				}
 
 				// Scroll to the bottom
@@ -308,7 +317,7 @@ jQuery(document).ready(function($) {
 	$('input[name=avatar_icon]').val(avatar.icon);
 	//$('form').css('background-color', avatar.color);
 	
-	var h = 40; //$('form').height();
+	var h = $('form').height() + 10;
 	$('#msgs').css('padding-bottom', h);
 	$('#msgs').css('min-height', 'calc(100vh - ' + h + 'px)');
 	
@@ -344,6 +353,9 @@ jQuery(document).ready(function($) {
 				e.preventDefault();
 				setTimeout(function() {
 					$('body').addClass('logged-in');
+					var h = $('form').height() + 10;
+					$('#msgs').css('padding-bottom', h);
+					$('#msgs').css('min-height', 'calc(100vh - ' + h + 'px)');
 				}, 250);
 				$('form').css('bottom', 0);
 			});

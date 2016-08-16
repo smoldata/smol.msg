@@ -105,10 +105,30 @@ function msg_send_pending() {
 	$db = db_setup();
 	$tx_batch = util_uuid();
 
+	// Delay sending SMS messages to recently-active web users (don't need
+	// to both SMS and show them messages on the website)
+	$web_active = usr_get_web_active();
+	$active_where_clause = '';
+	if (! empty($web_active)) {
+		$web_active = implode(', ', $web_active);
+		$active_where_clause = "AND usr_id NOT IN ($web_active)";
+	}
+
+	if (DEBUG) {
+		echo "
+			UPDATE tx
+			SET transmit_batch = ?
+			WHERE transmit_batch IS NULL
+			$active_where_clause
+		";
+		exit;
+	}
+
 	$query = $db->prepare("
 		UPDATE tx
 		SET transmit_batch = ?
 		WHERE transmit_batch IS NULL
+		$active_where_clause
 	");
 	$query->execute(array(
 		$tx_batch
