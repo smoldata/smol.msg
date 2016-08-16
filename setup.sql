@@ -32,6 +32,7 @@ CREATE TABLE `usr` (
   `context` varchar(255) DEFAULT NULL,
   `joined` datetime DEFAULT NULL,
   `active` datetime DEFAULT NULL,
+  `web_active` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `phone` (`phone`),
   UNIQUE KEY `name` (`name`)
@@ -57,10 +58,10 @@ CREATE TABLE `channel` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
 
-DROP TABLE IF EXISTS `usr_session`;
-CREATE TABLE `usr_session` (
-  `uuid` varchar(255) DEFAULT NULL,
-  `login_code` int(11) DEFAULT NULL,
-  `usr_id` int(11) unsigned NOT NULL,
-  PRIMARY KEY (`usr_id`)
+DROP TABLE IF EXISTS `usr_login`;
+CREATE TABLE `usr_login` (
+  `login_code` int(11) NOT NULL DEFAULT '0',
+  `usr_id` int(11) unsigned DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  PRIMARY KEY (`login_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
