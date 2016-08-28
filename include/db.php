@@ -76,6 +76,8 @@ function db_fetch($sql, $values = null) {
 
 function db_write($sql, $values = null) {
 
+	$db = db_setup();
+
 	$rsp = db_query($sql, $values);
 	if (! $rsp['ok']) {
 		return $rsp;
