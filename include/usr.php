@@ -29,10 +29,6 @@ function usr_get_by_phone($phone) {
 	
 	$db = db_setup();
 	$phone = usr_normalize_phone($phone);
-	
-	if (DEBUG) {
-		echo "Looking up phone: $phone\n";
-	}
 
 	$query = $db->prepare("
 		SELECT *
@@ -418,7 +414,7 @@ function usr_invite($usr, $rx_id, $phone) {
 		));
 		$invited_id = $db->lastInsertId();
 		$msg = "Hello! $usr->name has invited you to an SMS chat. Reply \"ok\" to join.";
-		msg_tx($rx_id, $invited_id, $msg, "send now");
+		msg_tx($invited_id, $msg, $rx_id, "send now");
 	}
 }
 

@@ -6,69 +6,51 @@ define('E_MSG_ALREADY_APPROVED', 2);
 define('E_MSG_SENDER_NOT_FOUND', 3);
 define('E_MSG_USER_BANNED', 4);
 
-function msg_rx($usr, $msg) {
-	$db = db_setup();
+function msg_rx($usr_id, $msg) {
 	$received = date('Y-m-d H:i:s');
 	$post_json = json_encode($_POST, JSON_PRETTY_PRINT);
-	$query = $db->prepare("
-		INSERT INTO rx
-		(usr_id, msg, received, post_json)
-		VALUES (?, ?, ?, ?)
-	");
-	$query->execute(array(
-		$usr->id,
-		$msg,
-		$received,
-		$post_json
+	return db_insert('rx', array(
+		'usr_id'    => $usr_id,
+		'msg'       => $msg,
+		'received'  => $received,
+		'post_json' => $post_json
 	));
-	$error_code = $query->errorCode();
-	if ($error_code != '00000') {
-		if (DEBUG) {
-			echo "Error rx $error_code:\n";
-			print_r($query->errorInfo());
-		}
-		return null;
-	}
-	return $db->lastInsertId();
 }
 
-function msg_tx($rx_id, $usr_id, $msg, $send_now = false) {
+function msg_tx($usr_id, $msg, $rx_id, $send_now = false) {
 	
 	if (is_array($msg)) {
+		// Send a multi-part message one part at a time.
 		foreach ($msg as $msg_part) {
-			msg_tx($rx_id, $usr_id, $msg_part, $send_now);
+			msg_tx($usr_id, $msg_part, $rx_id, $send_now);
 		}
 		return;
 	}
 	
-	$db = db_setup();
 	$queued = date('Y-m-d H:i:s');
-	$query = $db->prepare("
-		INSERT INTO tx
-		(rx_id, usr_id, msg, queued)
-		VALUES (?, ?, ?, ?)
-	");
-	$query->execute(array(
-		$rx_id,
-		$usr_id,
-		$msg,
-		$queued
+	$rsp = db_insert('tx', array(
+		'rx_id' => $rx_id,
+		'usr_id' => $usr_id,
+		'msg' => $msg,
+		'queued' => $queued
 	));
-	$tx_id = $db->lastInsertId();
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+
+	$tx_id = $rsp['insert_id'];
 	if (! empty($send_now)) {
 		$tx_batch = util_uuid();
-		$query = $db->prepare("
-			UPDATE tx
-			SET transmit_batch = ?
-			WHERE id = ?
-		");
-		$query->execute(array(
-			$tx_batch,
-			$tx_id
-		));
+		db_update('tx', array(
+			'transmit_batch' => $tx_batch
+		), "id = $tx_id");
 		msg_send_sms($tx_id);
 	}
-	return $tx_id;
+
+	return array(
+		'ok' => 1,
+		'tx_id' => $tx_id
+	);
 }
 
 function msg_admin_tx($rx_id, $sender, $msg) {
@@ -102,6 +84,11 @@ function msg_admin_tx($rx_id, $sender, $msg) {
 }
 
 function msg_send_pending() {
+
+	if (DEBUG) {
+		exit;
+	}
+
 	$db = db_setup();
 	$tx_batch = util_uuid();
 
@@ -112,16 +99,6 @@ function msg_send_pending() {
 	if (! empty($web_active)) {
 		$web_active = implode(', ', $web_active);
 		$active_where_clause = "AND usr_id NOT IN ($web_active)";
-	}
-
-	if (DEBUG) {
-		echo "
-			UPDATE tx
-			SET transmit_batch = ?
-			WHERE transmit_batch IS NULL
-			$active_where_clause
-		";
-		exit;
 	}
 
 	$query = $db->prepare("
@@ -272,6 +249,7 @@ function msg_send_sms($tx) {
 	));
 
 	if (DEBUG) {
+		echo "Created tx record:\n";
 		print_r($tx);
 	}
 
@@ -412,7 +390,7 @@ function msg_command($usr, $rx_id, $cmd) {
 	}
 
 	if (! empty($msg)) {
-		msg_tx($rx_id, $usr->id, $msg, "send now");
+		msg_tx($usr->id, $msg, $rx_id, "send now");
 	}
 	return true;
 }
@@ -496,7 +474,7 @@ function msg_chat($usr, $rx_id) {
 	$active_usrs = usr_get_active($usr);
 	$msg = msg_signed_format($usr, $msg_body);
 	foreach ($active_usrs as $tx_usr_id) {
-		msg_tx($rx_id, $tx_usr_id, $msg);
+		msg_tx($tx_usr_id, $msg, $rx_id);
 	}
 	return $chat_id;
 }

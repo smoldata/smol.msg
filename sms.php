@@ -8,10 +8,12 @@ if (! empty($_POST['Body']) &&
 	if (! $usr) {
 		die("Error: could not find a usr for {$_POST['From']}");
 	}
-	$rx_id = msg_rx($usr, $_POST['Body']);
-	if (! $rx_id) {
+	$rsp = msg_rx($usr->id, $_POST['Body']);
+	if (! $rsp['ok']) {
+		print_r($rsp);
 		die("Error: could not rx {$_POST['Body']}");
 	}
+	$rx_id = $rsp['insert_id'];
 	$context = usr_get_context($usr);
 
 	if (! msg_command($usr, $rx_id, $_POST['Body'])) {
@@ -22,30 +24,30 @@ if (! empty($_POST['Body']) &&
 			if ($admin_count == 0) {
 				usr_set_status($usr, 'admin');
 				$rsp = "Hi, you are the first one here. Choose a name (or chat handle):";
-				msg_tx($rx_id, $usr->id, $rsp, "send now");
+				msg_tx($usr->id, $rsp, $rx_id, "send now");
 			} else {
 				$rsp = "Thanks for your message! To chat with others who replied, choose a name (or chat handle):";
-				msg_tx($rx_id, $usr->id, $rsp, "send now");
+				msg_tx($usr->id, $rsp, $rx_id, "send now");
 			}
 		} else if ($context == 'invited') {
 			$rsp = "Welcome to the chat! Please choose a name (or chat handle):";
-			msg_tx($rx_id, $usr->id, $rsp, "send now");
+			msg_tx($usr->id, $rsp, $rx_id, "send now");
 			usr_set_context($usr, 'name');
 		} else if ($context == 'name') {
 			$rsp = usr_set_name($usr, $rx_id, $_POST['Body']);
 			if ($rsp == OK) {
 				$msg = "Reply /stop to leave, or /help for more commands. Read the chat archives at:\n$website_url";
-				msg_tx($rx_id, $usr->id, $msg, "send now");
+				msg_tx($usr->id, $msg, $rx_id, "send now");
 				usr_set_context($usr, 'chat');
 			} else {
 				global $usr_name_errors;
 				$error = $usr_name_errors[$rsp];
 				$msg = "$error Choose again:";
-				msg_tx($rx_id, $usr->id, $msg, "send now");
+				msg_tx($usr->id, $msg, $rx_id, "send now");
 			}
 		} else if ($context == 'stopped') {
 			$msg = "Oops, you have left the chat. Send /start to rejoin.";
-			msg_tx($rx_id, $usr->id, $msg, "send now");
+			msg_tx($usr->id, $msg, $rx_id, "send now");
 		} else if ($context == 'chat') {
 			msg_chat($usr, $rx_id);
 		} else {

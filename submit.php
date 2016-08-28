@@ -10,10 +10,12 @@ $rsp = array(
 if (! empty($_POST['msg']) &&
     ! empty($_SESSION['usr_id'])) {
 	$usr = usr_get_by_id($_SESSION['usr_id']);
-	$rx_id = msg_rx($usr, $_POST['msg']);
-	if (! $rx_id) {
+	$rsp = msg_rx($usr->id, $_POST['msg']);
+	if (! $rsp['ok']) {
+		print_r($rsp);
 		die("Error: could not rx {$_POST['msg']}");
 	}
+	$rx_id = $rsp['insert_id'];
 	$context = usr_get_context($usr);
 	if (msg_command($usr, $rx_id, $_POST['msg'])) {
 		$rsp = array(
