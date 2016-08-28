@@ -26,120 +26,87 @@ $usr_errors = array(
 );
 
 function usr_get_by_phone($phone) {
-	
-	$db = db_setup();
-	$phone = usr_normalize_phone($phone);
 
-	$query = $db->prepare("
+	$phone = util_normalize_phone($phone);
+
+	$rsp = db_single("
 		SELECT *
 		FROM usr
 		WHERE phone = ?
-	");
-	$query->execute(array($phone));
-	$usr = $query->fetchObject();
-
-	if (empty($usr)) {
-		$name = substr($phone, -4, 4);
-		$context = 'intro';
-		$now = date('Y-m-d H:i:s');
-		$query = $db->prepare("
-			INSERT INTO usr
-			(phone, name, context, joined, active)
-			VALUES (?, ?, ?, ?, ?)
-		");
-		$query->execute(array(
-			$phone,
-			$name,
-			$context,
-			$now, // joined
-			$now  // active
-		));
-		$query = $db->prepare("
-			SELECT *
-			FROM usr
-			WHERE phone = ?
-		");
-		$query->execute(array($phone));
-		$error_code = $query->errorCode();
-		if ($error_code != '00000') {
-			if (DEBUG) {
-				echo "Error usr $error_code:\n";
-				print_r($query->errorInfo());
-			}
-			return null;
-		}
-		$usr = $query->fetchObject();
+	", array($phone));
+	if (! $rsp['ok']) {
+		return $rsp;
 	}
-	return $usr;
+
+	if (! empty($rsp['row'])) {
+		// Found an existing record, all done!
+		$rsp['usr'] = $rsp['row'];
+		return $rsp;
+	}
+
+	$last_four = substr($phone, -4, 4);
+	$name = $last_four;
+	$alias = 0;
+	$rsp = usr_get_by_name($name);
+
+	// Keep looking until we find a unique name
+	while (! empty($rsp['row'])) {
+		$alias++;
+		$name = "{$last_four}_{$alias}";
+		$rsp = usr_get_by_name($name);
+	}
+
+	// Create a new user record
+	$context = 'intro';
+	$now = date('Y-m-d H:i:s');
+	$rsp = db_insert('usr', array(
+		'phone'   => $phone,
+		'name'    => $name,
+		'context' => $context,
+		'joined'  => $now,
+		'active'  => $now
+	));
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+
+	// Return the newly created record
+	return usr_get_by_phone($phone);
 }
 
 function usr_get_by_id($id) {
-	$db = db_setup();
-	$query = $db->prepare("
+	$rsp = db_single("
 		SELECT *
 		FROM usr
 		WHERE id = ?
-	");
-	$query->execute(array(
-		$id
-	));
-	return $query->fetchObject();
+	", array($name));
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+
+	$rsp['usr'] = $rsp['row'];
+	return $rsp;
 }
 
 function usr_get_by_name($name) {
-	$db = db_setup();
-	$query = $db->prepare("
+	$rsp = db_single("
 		SELECT *
 		FROM usr
 		WHERE name = ?
-	");
-	$query->execute(array(
-		$name
-	));
-	return $query->fetchObject();
+	", array($name));
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+
+	$rsp['usr'] = $rsp['row'];
+	return $rsp;
 }
 
-function usr_get_context($usr) {
-	return $usr->context;
-}
-
-function usr_set_context($usr, $context) {
+function usr_set_context($usr_id, $context) {
 	$usr->context = $context;
-	$db = db_setup();
-	$query = $db->prepare("
-		UPDATE usr
-		SET context = ?
-		WHERE id = ?
-	");
-	$query->execute(array(
-		$context,
-		$usr->id
-	));
-}
-
-function usr_normalize_phone($phone) {
-	
-	$phone = trim($phone);
-	if (substr($phone, 0, 1) == '+') {
-		return $phone;
-	}
-
-	// Strip anything that's NOT a number
-	$phone = preg_replace('/\D/', '', $phone);
-	
-	// Make sure the country code is present
-	// TODO: make this compatible with numbers outside US/Canada
-	if (substr($phone, 0, 1) != '1') {
-		$phone = "1$phone";
-	}
-	
-	// Make sure the number of digits is right
-	if (strlen($phone) != 11) {
-		return null;
-	}
-	
-	// Add a plus sign prefix
-	return "+$phone";
+	return db_update('usr', array(
+		'context' => $context
+	), "id = $usr_id");
 }
 
 function usr_set_name($usr, $rx_id, $name) {
@@ -173,7 +140,7 @@ function usr_set_name($usr, $rx_id, $name) {
 		$usr->id
 	));
 
-	msg_admin_tx($rx_id, $usr, "[$usr->name is now known as $name]");
+	msg_admin_tx($usr->id, "[$usr->name is now known as $name]", $rx_id);
 
 	$usr->name = $name;
 
@@ -309,23 +276,20 @@ function usr_get_web_active() {
 	return $active;
 }
 
-function usr_get_admins($usr) {
-	$db = db_setup();
-	$query = $db->prepare("
+function usr_get_admins($usr_id) {
+	$rsp = db_column("
 		SELECT id
 		FROM usr
 		WHERE id != ?
 		  AND context = 'chat'
 		  AND status = 'admin'
-	");
-	$query->execute(array(
-		$usr->id
-	));
-	$admins = array();
-	while ($id = $query->fetchColumn(0)) {
-		$admins[] = $id;
+	", array($usr_id));
+	if (! $rsp['ok']) {
+		return $rsp;
 	}
-	return $admins;
+
+	$rsp['admins'] = $rsp['column'];
+	return $rsp;
 }
 
 function usr_check_if_muted($tx) {
@@ -384,7 +348,7 @@ function usr_update_active_time($usr_id, $column = 'active') {
 }
 
 function usr_invite($usr, $rx_id, $phone) {
-	$phone = usr_normalize_phone($phone);
+	$phone = util_normalize_phone($phone);
 	if (! $phone) {
 		return E_USR_INVALID_PHONE;
 	}

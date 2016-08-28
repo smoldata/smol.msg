@@ -53,12 +53,12 @@ function msg_tx($usr_id, $msg, $rx_id, $send_now = false) {
 	);
 }
 
-function msg_admin_tx($rx_id, $sender, $msg) {
+function msg_admin_tx($usr_id, $msg, $rx_id) {
 
 	if (is_array($msg)) {
 		$count = 0;
 		foreach ($msg as $msg_part) {
-			$count += msg_admin_tx($rx_id, $sender, $msg_part);
+			$count += msg_admin_tx($usr_id, $msg_part, $rx_id);
 		}
 		return $count;
 	}
@@ -71,8 +71,11 @@ function msg_admin_tx($rx_id, $sender, $msg) {
 		VALUES (?, ?, ?, ?)
 	");
 
-	$admins = usr_get_admins($sender);
-	foreach ($admins as $admin_id) {
+	$rsp = usr_get_admins($usr_id);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	foreach ($rsp['admins'] as $admin_id) {
 		$query->execute(array(
 			$rx_id,
 			$admin_id,
@@ -95,23 +98,20 @@ function msg_send_pending() {
 	// Delay sending SMS messages to recently-active web users (don't need
 	// to both SMS and show them messages on the website)
 	$web_active = usr_get_web_active();
-	$active_where_clause = '';
+	$where_clause = 'transmit_batch IS NULL';
 	if (! empty($web_active)) {
 		$web_active = implode(', ', $web_active);
-		$active_where_clause = "AND usr_id NOT IN ($web_active)";
+		$where_clause .= " AND usr_id NOT IN ($web_active)";
 	}
 
-	$query = $db->prepare("
-		UPDATE tx
-		SET transmit_batch = ?
-		WHERE transmit_batch IS NULL
-		$active_where_clause
-	");
-	$query->execute(array(
-		$tx_batch
-	));
+	$rsp = db_update('tx', array(
+		'transmit_batch' => $tx_batch
+	), $where_clause);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
 
-	$query = $db->prepare("
+	$rsp = db_fetch("
 		SELECT tx.id AS id,
 		       tx.usr_id AS usr_id,
 		       rx.usr_id AS sender_id,
@@ -122,13 +122,21 @@ function msg_send_pending() {
 		  AND tx.rx_id = rx.id
 		  AND tx.usr_id = usr.id
 		ORDER BY tx.queued
-	");
-	$query->execute(array(
-		$tx_batch
-	));
-	while ($tx = $query->fetchObject()) {
-		msg_send_sms($tx);
+	", $tx_batch);
+	if (! $rsp['ok']) {
+		return $rsp;
 	}
+
+	$count = 0;
+	foreach ($rsp['rows'] as $tx) {
+		if (msg_send_sms($tx)) {
+			$count++;
+		}
+	}
+	return array(
+		'ok' => 1,
+		'sent_msg_count' => $count
+	);
 }
 
 function msg_send_sms($tx) {
@@ -312,12 +320,12 @@ function msg_command($usr, $rx_id, $cmd) {
 		$help_cmd = $matches[1];
 		$msg = $help_msgs[$help_cmd];
 	} else if ($cmd == 'stop') {
-		usr_set_context($usr, 'stopped');
+		usr_set_context($usr->id, 'stopped');
 		$msg = "You have left the chat. Send /start to rejoin.";
 	} else if ($cmd == 'start' ||
 	           $cmd == 'join') {
 		$msg = 'You have rejoined the chat. Welcome back!';
-		usr_set_context($usr, 'chat');
+		usr_set_context($usr->id, 'chat');
 	} else if (preg_match('/^name (.+)$/', $cmd, $matches)) {
 		$rsp = usr_set_name($usr, $rx_id, $matches[1]);
 		if ($rsp == OK) {
@@ -369,10 +377,11 @@ function msg_command($usr, $rx_id, $cmd) {
 		}
 	} else if (usr_is_admin($usr) &&
 	           preg_match('/(un)?ban (.+)$/', $cmd, $matches)) {
-		$ban_usr = usr_get_by_name($matches[2]);
-		if (! $ban_usr) {
+		$rsp = usr_get_by_name($matches[2]);
+		if (empty($rsp['usr'])) {
 			$msg = "Couldn't find user {$matches[2]}.";
 		} else {
+			$ban_usr = $rsp['usr'];
 			$ban_active = ($matches[1] == 'un') ? false : true;
 			$rsp = usr_set_ban($ban_usr, $ban_active);
 			if ($rsp == OK) {
@@ -466,7 +475,7 @@ function msg_chat($usr, $rx_id) {
 	$msg_body = msg_body($rx_id);
 	if ($usr->status == 'banned') {
 		$banned_msg = msg_signed_format($usr, "[banned] $msg_body");
-		msg_admin_tx($rx_id, $usr, $banned_msg);
+		msg_admin_tx($usr->id, $banned_msg, $rx_id);
 		return E_MSG_USER_BANNED;
 	}
 	$channel_msg = "$usr->name: $msg_body";

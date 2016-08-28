@@ -8,7 +8,12 @@ $rsp = array(
 );
 
 if (! empty($_SESSION['usr_id'])) {
-	$usr = usr_get_by_id($_SESSION['usr_id']);
+	$rsp = usr_get_by_id($_SESSION['usr_id']);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+
+	$usr = $rsp['usr'];
 	$rsp = array(
 		'ok' => 1,
 		'usr_name' => $usr->name
@@ -36,7 +41,12 @@ if (! empty($_SESSION['usr_id'])) {
 		}
 	} else if (! empty($login->usr_id)) {
 		// Hey, we are logged in!
-		$usr = usr_get_by_id($login->usr_id);
+		$rsp = usr_get_by_id($login->usr_id);
+		if (! $rsp['ok']) {
+			return $rsp;
+		}
+
+		$usr = $rsp['usr'];
 		$_SESSION['usr_id'] = $login->usr_id;
 		$_SESSION['login_code'] = null;
 		usr_delete_login($login->login_code);
@@ -55,7 +65,7 @@ if (! empty($_SESSION['usr_id'])) {
 }
 
 $rsp['phone'] = $phone_number;
-$rsp['phone_normalized'] = util_normalize_phone_number($phone_number);
+$rsp['phone_normalized'] = util_normalize_phone($phone_number);
 
 header('Content-Type: application/json');
 echo json_encode($rsp);

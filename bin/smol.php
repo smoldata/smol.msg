@@ -15,7 +15,7 @@ $msg = $argv[1];
 $from = '+12125551212';
 
 if (! empty($argv[2])) {
-	$from = util_normalize_phone_number($argv[2]);
+	$from = util_normalize_phone($argv[2]);
 }
 
 $post = array(

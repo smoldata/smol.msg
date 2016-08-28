@@ -74,6 +74,29 @@ function db_fetch($sql, $values = null) {
 	return $rsp;
 }
 
+function db_column($sql, $values = null, $column_num = 0) {
+
+	$rsp = db_query($sql, $values);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	$query = $rsp['query'];
+	$rsp['column'] = $query->fetchColumn($column_num);
+
+	return $rsp;
+}
+
+function db_single($sql, $values = null) {
+	$rsp = db_query($sql, $values);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	$query = $rsp['query'];
+	$rsp['row'] = $query->fetchObject();
+
+	return $rsp;
+}
+
 function db_write($sql, $values = null) {
 
 	$db = db_setup();
@@ -84,14 +107,13 @@ function db_write($sql, $values = null) {
 	}
 
 	$query = $rsp['query'];
-	return array(
-		'ok' => 1,
-		'insert_id' => $db->lastInsertId(),
-		'row_count' => $query->rowCount()
-	);
+	$rsp['insert_id'] = $db->lastInsertId();
+	$rsp['row_count'] = $query->rowCount();
+
+	return $rsp;
 }
 
-function db_query($sql, $values) {
+function db_query($sql, $values = null) {
 
 	$db = db_setup();
 

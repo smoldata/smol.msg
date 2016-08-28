@@ -3,6 +3,7 @@
 $phone_number = '(718) 555-1212';
 $website_url = 'sms.smalldata.coop';
 $use_ssl = true;
+$default_country_code = 1;
 
 // You can find the account SID / auth token at https://twilio.com/console
 $twilio_account_sid = 'XXXXXXXXXXXXXXXXXX';

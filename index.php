@@ -52,7 +52,7 @@ $topic = 'smol msg svc';
 						<span class="website"><?php echo $website_url; ?></span>
 						<br class="clear">
 					<?php } else { ?>
-						<span class="prompt">SMS <a href="sms:<?php echo util_normalize_phone_number($phone_number); ?>"><?php echo $phone_number; ?></a> to chat.</span>
+						<span class="prompt">SMS <a href="sms:<?php echo util_normalize_phone($phone_number); ?>"><?php echo $phone_number; ?></a> to chat.</span>
 						<a href="#login" class="login-link">Login</a>
 						<br class="clear">
 					<?php } ?>

@@ -1,8 +1,13 @@
 <?php
 
-function util_normalize_phone_number($phone) {
+function util_normalize_phone($phone) {
+	include dirname(__DIR__) . "/config.php";
+	$prefix = '+' . $default_country_code;
+	if (substr($phone, 0, 1) == '+') {
+		$prefix = '+';
+	}
 	$phone = preg_replace('/\D/', '', $phone);
-	$phone = "+1$phone";
+	$phone = "$prefix$phone";
 	return $phone;
 }
 
