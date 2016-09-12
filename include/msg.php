@@ -56,34 +56,32 @@ function msg_tx($usr_id, $msg, $rx_id, $send_now = false) {
 function msg_admin_tx($usr_id, $msg, $rx_id) {
 
 	if (is_array($msg)) {
-		$count = 0;
 		foreach ($msg as $msg_part) {
-			$count += msg_admin_tx($usr_id, $msg_part, $rx_id);
+			$rsp = msg_admin_tx($usr_id, $msg_part, $rx_id);
+			if (! $rsp['ok']) {
+				return $rsp;
+			}
 		}
-		return $count;
+		return $rsp;
 	}
-
-	$db = db_setup();
-	$queued = date('Y-m-d H:i:s');
-	$query = $db->prepare("
-		INSERT INTO tx
-		(rx_id, usr_id, msg, queued)
-		VALUES (?, ?, ?, ?)
-	");
 
 	$rsp = usr_get_admins($usr_id);
 	if (! $rsp['ok']) {
 		return $rsp;
 	}
-	foreach ($rsp['admins'] as $admin_id) {
-		$query->execute(array(
-			$rx_id,
-			$admin_id,
-			$msg,
-			$queued
-		));
+
+	$admins = $rsp['admins'];
+	$bulk_values = array();
+	$queued = date('Y-m-d H:i:s');
+	foreach ($admins as $admin_id) {
+		$bulk_values[] = array(
+			'rx_id'  => $rx_id,
+			'usr_id' => $admin_id,
+			'msg'    => $msg,
+			'queued' => $queued
+		);
 	}
-	return count($admins);
+	return db_insert_bulk('tx', $bulk_values);
 }
 
 function msg_send_pending() {
@@ -107,6 +105,7 @@ function msg_send_pending() {
 	$rsp = db_update('tx', array(
 		'transmit_batch' => $tx_batch
 	), $where_clause);
+
 	if (! $rsp['ok']) {
 		return $rsp;
 	}
@@ -122,7 +121,7 @@ function msg_send_pending() {
 		  AND tx.rx_id = rx.id
 		  AND tx.usr_id = usr.id
 		ORDER BY tx.queued
-	", $tx_batch);
+	", array($tx_batch));
 	if (! $rsp['ok']) {
 		return $rsp;
 	}

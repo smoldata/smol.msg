@@ -13,8 +13,9 @@ if (! empty($_POST['Body']) &&
 	$usr = $rsp['usr'];
 	$rsp = msg_rx($usr->id, $_POST['Body']);
 	if (! $rsp['ok']) {
+		echo "Error: could not rx {$_POST['Body']}\n";
 		print_r($rsp);
-		die("Error: could not rx {$_POST['Body']}");
+		exit;
 	}
 	$rx_id = $rsp['insert_id'];
 	$context = $usr->context;
@@ -22,9 +23,17 @@ if (! empty($_POST['Body']) &&
 	if (! msg_command($usr, $rx_id, $_POST['Body'])) {
 		if ($context == 'intro') {
 			$msg = msg_signed_format($usr, "{$_POST['Body']}\n[/approve {$rx_id}]");
-			$admin_count = msg_admin_tx($usr->id, $msg, $rx_id);
+			msg_admin_tx($usr->id, $msg, $rx_id);
+			$rsp = usr_get_count();
+			if (! $rsp['ok']) {
+				echo "Error: could not figure out how many users there are.\n";
+				print_r($rsp);
+				exit;
+			}
+
+			$usr_count = $rsp['usr_count'];
 			usr_set_context($usr->id, 'name');
-			if ($admin_count == 0) {
+			if ($usr_count == 1) {
 				usr_set_status($usr, 'admin');
 				$rsp = "Hi, you are the first one here. Choose a name (or chat handle):";
 				msg_tx($usr->id, $rsp, $rx_id, "send now");

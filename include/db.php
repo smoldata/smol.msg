@@ -31,6 +31,8 @@ function db_setup() {
 
 function db_insert($tbl, $hash) {
 
+	$db = db_setup();
+
 	$columns = array_keys($hash);
 	$columns = implode(', ', $columns);
 	$placeholders = array_map(function($input) {
@@ -39,11 +41,41 @@ function db_insert($tbl, $hash) {
 	$placeholders = implode(', ', $placeholders);
 	$values = array_values($hash);
 
-	return db_write("
+	$rsp = db_write("
 		INSERT INTO $tbl
 		($columns)
 		VALUES ($placeholders)
 	", $values);
+	$rsp['insert_id'] = $db->lastInsertId();
+
+	return $rsp;
+}
+
+function db_insert_bulk($tbl, $hashes) {
+
+	$ok = 1;
+	$insert_ids = array();
+	foreach ($hashes as $hash) {
+		$rsp = db_insert($tbl, $hash);
+		if (! $rsp['ok']) {
+			$ok = 0;
+			break;
+		}
+
+		$insert_ids[] = $rsp['insert_id'];
+	}
+
+	if ($ok) {
+		return array(
+			'ok' => 1,
+			'insert_ids' => $insert_ids,
+			'row_count' => count($insert_ids)
+		);
+	} else {
+		$rsp['insert_ids'] = $insert_ids;
+		$rsp['row_count'] = count($insert_ids);
+		return $rsp;
+	}
 }
 
 function db_update($tbl, $hash, $where) {
@@ -54,7 +86,7 @@ function db_update($tbl, $hash, $where) {
 	}
 	$assignments = implode(', ', $assignments);
 	$values = array_values($hash);
-	
+
 	return db_write("
 		UPDATE $tbl
 		SET $assignments
@@ -81,7 +113,12 @@ function db_column($sql, $values = null, $column_num = 0) {
 		return $rsp;
 	}
 	$query = $rsp['query'];
-	$rsp['column'] = $query->fetchColumn($column_num);
+
+	$column = array();
+	while ($row = $query->fetchColumn($column_num)) {
+		$column[] = $row;
+	}
+	$rsp['column'] = $column;
 
 	return $rsp;
 }
@@ -97,6 +134,17 @@ function db_single($sql, $values = null) {
 	return $rsp;
 }
 
+function db_value($sql, $values = null, $column_num = 0) {
+	$rsp = db_query($sql, $values);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	$query = $rsp['query'];
+	$rsp['value'] = $query->fetchColumn($column_num);
+
+	return $rsp;
+}
+
 function db_write($sql, $values = null) {
 
 	$db = db_setup();
@@ -107,7 +155,6 @@ function db_write($sql, $values = null) {
 	}
 
 	$query = $rsp['query'];
-	$rsp['insert_id'] = $db->lastInsertId();
 	$rsp['row_count'] = $query->rowCount();
 
 	return $rsp;

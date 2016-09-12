@@ -289,6 +289,24 @@ function usr_get_admins($usr_id) {
 	}
 
 	$rsp['admins'] = $rsp['column'];
+	if (DEBUG) {
+		echo "Found admins:\n";
+		print_r($rsp);
+	}
+
+	return $rsp;
+}
+
+function usr_get_count() {
+	$rsp = db_value("
+		SELECT COUNT(id)
+		FROM usr
+	");
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+
+	$rsp['usr_count'] = $rsp['value'];
 	return $rsp;
 }
 
@@ -307,22 +325,16 @@ function usr_check_if_muted($tx) {
 			}
 			array_push($usr_mutes[$mute->usr_id], $mute->muted_id);
 		}
-		if (DEBUG) {
-			echo "Mutes:\n";
-			print_r($usr_mutes);
-		}
 	}
 	if (empty($usr_mutes[$tx->usr_id])) {
 		return false;
 	}
 	if (DEBUG) {
-		echo "Checking if $tx->sender_id is in mutes for $tx->usr_id: ";
 		if (in_array($tx->sender_id, $usr_mutes[$tx->usr_id])) {
 			echo "yes\n";
 		} else {
 			echo "no\n";
 		}
-		print_r($usr_mutes[$tx->usr_id]);
 	}
 	return in_array($tx->sender_id, $usr_mutes[$tx->usr_id]);
 }
