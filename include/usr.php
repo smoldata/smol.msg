@@ -103,7 +103,6 @@ function usr_get_by_name($name) {
 }
 
 function usr_set_context($usr_id, $context) {
-	$usr->context = $context;
 	return db_update('usr', array(
 		'context' => $context
 	), "id = $usr_id");

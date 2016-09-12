@@ -155,7 +155,7 @@ function msg_send_sms($tx) {
 	}
 
 	$db = db_setup();
-	
+
 	if (is_numeric($tx)) {
 		$query = $db->prepare("
 			SELECT tx.id AS id,
@@ -174,7 +174,7 @@ function msg_send_sms($tx) {
 		$tx = $query->fetchObject();
 	} else if (empty($tx->id)) {
 		if (DEBUG) {
-			echo "Cannot send SMS, no tx record.";
+			echo "Cannot send SMS, no tx record.\n";
 		}
 		return false;
 	}
@@ -192,6 +192,17 @@ function msg_send_sms($tx) {
 			$transmitted,
 			$tx->id
 		));
+		if (DEBUG) {
+			echo "Not sending SMS, because user is muted.\n";
+		}
+		return false;
+	}
+
+	if (! empty($offline_mode)) {
+		if (DEBUG) {
+			echo "[Offline mode] would have sent SMS\n";
+			print_r($tx);
+		}
 		return false;
 	}
 
