@@ -1,75 +1,56 @@
 <?php
 
-include 'include/init.php';
+include(__DIR__ . '/include/init.php');
+include(__DIR__ . '/sms_commands.php');
+include(__DIR__ . '/sms_handlers.php');
 
-if (! empty($_POST['Body']) &&
-    ! empty($_POST['From'])) {
-	$rsp = usr_get_by_phone($_POST['From']);
-	if (! $rsp['ok']) {
-		echo "Error: could not load user for {$_POST['From']}\n";
-		print_r($rsp);
-		exit;
-	}
-	$usr = $rsp['usr'];
-	$rsp = msg_rx($usr->id, $_POST['Body']);
-	if (! $rsp['ok']) {
-		echo "Error: could not rx {$_POST['Body']}\n";
-		print_r($rsp);
-		exit;
-	}
-	$rx_id = $rsp['insert_id'];
-	$context = $usr->context;
+// At a minimum, we need to know the 'what' and the 'who.' These are provided
+// by the Twilio service as POST variables Body & From.
+if (empty($_POST['Body']) ||
+    empty($_POST['From'])) {
+	die("Please use a POST request with 'Body' and 'From' arguments.");
+}
 
-	if (! msg_command($usr, $rx_id, $_POST['Body'])) {
-		if ($context == 'intro') {
-			$msg = msg_signed_format($usr, "{$_POST['Body']}\n[/approve {$rx_id}]");
-			msg_admin_tx($usr->id, $msg, $rx_id);
-			$rsp = usr_get_count();
-			if (! $rsp['ok']) {
-				echo "Error: could not figure out how many users there are.\n";
-				print_r($rsp);
-				exit;
-			}
+// Load an existing $usr object for the phone number, or create one
+// if it doesn't exist yet.
+$rsp = usr_get_by_phone($_POST['From']);
+if (! $rsp['ok']) {
+	echo "Error: could not load user for {$_POST['From']}\n";
+	print_r($rsp);
+	exit;
+}
+$usr = $rsp['usr'];
+$usr_id = $usr->id;
+$usr_context = $usr->context;
 
-			$usr_count = $rsp['usr_count'];
-			usr_set_context($usr->id, 'name');
-			if ($usr_count == 1) {
-				usr_set_status($usr, 'admin');
-				$rsp = "Hi, you are the first one here. Choose a name (or chat handle):";
-				msg_tx($usr->id, $rsp, $rx_id, "send now");
-			} else {
-				$rsp = "Thanks for your message! To chat with others who replied, choose a name (or chat handle):";
-				msg_tx($usr->id, $rsp, $rx_id, "send now");
-			}
-		} else if ($context == 'invited') {
-			$rsp = "Welcome to the chat! Please choose a name (or chat handle):";
-			msg_tx($usr->id, $rsp, $rx_id, "send now");
-			usr_set_context($usr->id, 'name');
-		} else if ($context == 'name') {
-			$rsp = usr_set_name($usr, $rx_id, $_POST['Body']);
-			if ($rsp == OK) {
-				$msg = "Reply /stop to leave, or /help for more commands. Read the chat archives at:\n$website_url";
-				msg_tx($usr->id, $msg, $rx_id, "send now");
-				usr_set_context($usr->id, 'chat');
-			} else {
-				global $usr_name_errors;
-				$error = $usr_name_errors[$rsp];
-				$msg = "$error Choose again:";
-				msg_tx($usr->id, $msg, $rx_id, "send now");
-			}
-		} else if ($context == 'stopped') {
-			$msg = "Oops, you have left the chat. Send /start to rejoin.";
-			msg_tx($usr->id, $msg, $rx_id, "send now");
-		} else if ($context == 'chat') {
-			msg_chat($usr, $rx_id);
-		} else {
-			if (DEBUG) {
-				echo "User has unknown context: $context\n";
-			}
-		}
-	}
-	
-	if ($context != 'intro') {
-		usr_update_active_time($usr->id);
-	}
+$rx_msg = $_POST['Body'];
+
+// Record the incoming message in the rx database table.
+$rsp = msg_rx($usr_id, $rx_msg);
+if (! $rsp['ok']) {
+	echo "Error: could not rx {$rx_msg} from usr {$usr_id}\n";
+	print_r($rsp);
+	exit;
+}
+$rx_id = $rsp['insert_id'];
+
+// Now we know who sent the message ($usr_id) and have made a record of its
+// receipt ($rx_id). Next we will:
+//   1. Check to see if the message matches known commands (e.g., "/stop")
+//   2. Proceed with a handler function, according to the user's context
+
+$cmd = msg_is_command($rx_msg);
+if ($cmd) {
+	// User is trying to issue a command
+	// See: sms_commands.php
+	sms_command($usr_id, $rx_msg, $rx_id, $cmd);
+} else {
+	// Not a command, proceed according to the $usr_context
+	// See: sms_handlers.php
+	sms_handler($usr_id, $rx_msg, $rx_id, $usr_context);
+}
+
+// Update the user's active time
+if ($usr_context != 'intro') {
+	usr_update_active_time($usr_id);
 }

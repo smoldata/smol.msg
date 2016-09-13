@@ -1,29 +1,6 @@
 <?php
 
-define('E_USR_NAME_FORMAT', 1);
-define('E_USR_NAME_EXISTS', 2);
-
-define('USR_MUTED', 3);
-define('USR_UNMUTED', 4);
-
-define('E_USR_DOES_NOT_EXIST', 5);
-define('E_USR_NOT_MUTED', 6);
-define('E_USR_CANT_MUTE_SELF', 7);
-
-define('E_USR_INVALID_PHONE', 8);
-define('E_USR_LOGIN_INVALID', 9);
-define('E_USR_LOGIN_EXPIRED', 10);
-
 define('USR_LOGIN_TTL', 15 * 60 * 60);
-
-$usr_errors = array(
-	E_USR_NAME_FORMAT => 'Sorry, please keep it to 16 letters, numbers, or _ (no spaces).',
-	E_USR_NAME_EXISTS => 'Oops, somebody else already has that name.',
-	E_USR_DOES_NOT_EXIST => 'Huh, that user does not exist. Sorry!',
-	E_USR_NOT_MUTED => 'Weird, it seems you weren\'t muting that user. In any case, you will get their messages now!',
-	E_USR_CANT_MUTE_SELF => 'Uhh, sorry you cannot mute yourself!',
-	E_USR_INVALID_PHONE => 'Hmm. That phone number doesn\'t seem to work?'
-);
 
 function usr_get_by_phone($phone) {
 
@@ -108,10 +85,10 @@ function usr_set_context($usr_id, $context) {
 	), "id = $usr_id");
 }
 
-function usr_set_name($usr, $rx_id, $name) {
+function usr_set_name($usr_id, $name) {
 	$name = trim($name);
 	if (! preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
-		return E_USR_NAME_FORMAT;
+		return 'err_name_format';
 	}
 	$db = db_setup();
 	
@@ -126,7 +103,7 @@ function usr_set_name($usr, $rx_id, $name) {
 	$existing = $query->fetchObject();
 	if (! empty($existing) &&
 	    $existing->id != $usr->id) {
-		return E_USR_NAME_EXISTS;
+		return 'err_name_exists';
 	}
 	
 	$query = $db->prepare("
@@ -140,8 +117,6 @@ function usr_set_name($usr, $rx_id, $name) {
 	));
 
 	msg_admin_tx($usr->id, "[$usr->name is now known as $name]", $rx_id);
-
-	$usr->name = $name;
 
 	return OK;
 }
@@ -184,11 +159,11 @@ function usr_set_mute($usr, $name, $mute) {
 	));
 	$mute_usr = $query->fetchObject();
 	if (empty($mute_usr)) {
-		return E_USR_DOES_NOT_EXIST;
+		return 'err_user_not_found';
 	}
 
 	if ($mute_usr->id == $usr->id) {
-		return E_USR_CANT_MUTE_SELF;
+		return 'err_cannot_mute_self';
 	}
 
 	$query = $db->prepare("
@@ -217,7 +192,7 @@ function usr_set_mute($usr, $name, $mute) {
 				$created
 			));
 		}
-		return USR_MUTED;
+		return OK;
 	} else {
 		if (! empty($exists)) {
 			$query = $db->prepare("
@@ -229,29 +204,29 @@ function usr_set_mute($usr, $name, $mute) {
 				$usr->id,
 				$mute_usr->id
 			));
-			return USR_UNMUTED;
+			return OK;
 		} else {
-			return E_USR_NOT_MUTED;
+			return OK;
 		}
 	}
 }
 
-function usr_get_active($usr) {
-	$db = db_setup();
-	$query = $db->prepare("
+function usr_get_active($curr_usr_id = 0) {
+	$rsp = db_column("
 		SELECT id
 		FROM usr
 		WHERE id != ?
 		  AND context = 'chat'
-	");
-	$query->execute(array(
-		$usr->id
-	));
-	$active = array();
-	while ($id = $query->fetchColumn(0)) {
-		$active[] = $id;
+		  AND status != 'banned'
+	", array($curr_usr_id));
+	if (! $rsp['ok']) {
+		return $rsp;
 	}
-	return $active;
+
+	return array(
+		'ok' => 1,
+		'active' => $rsp['column']
+	);
 }
 
 function usr_get_web_active() {
@@ -361,7 +336,7 @@ function usr_update_active_time($usr_id, $column = 'active') {
 function usr_invite($usr, $rx_id, $phone) {
 	$phone = util_normalize_phone($phone);
 	if (! $phone) {
-		return E_USR_INVALID_PHONE;
+		return 'err_invalid_phone';
 	}
 
 	$db = db_setup();
@@ -449,9 +424,9 @@ function usr_complete_login($usr, $login_code) {
 	$login = usr_get_login($login_code);
 	$ttl_cutoff = time() - USR_LOGIN_TTL;
 	if (empty($login)) {
-		return E_USR_LOGIN_INVALID;
+		return 'err_login_invalid';
 	} else if (strtotime($login->created) < $ttl_cutoff) {
-		return E_USR_LOGIN_EXPIRED;
+		return 'err_login_expired';
 	}
 	
 	$db = db_setup();

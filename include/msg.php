@@ -6,32 +6,32 @@ define('E_MSG_ALREADY_APPROVED', 2);
 define('E_MSG_SENDER_NOT_FOUND', 3);
 define('E_MSG_USER_BANNED', 4);
 
-function msg_rx($usr_id, $msg) {
+function msg_rx($usr_id, $rx_msg) {
 	$received = date('Y-m-d H:i:s');
 	$post_json = json_encode($_POST, JSON_PRETTY_PRINT);
 	return db_insert('rx', array(
 		'usr_id'    => $usr_id,
-		'msg'       => $msg,
+		'msg'       => $rx_msg,
 		'received'  => $received,
 		'post_json' => $post_json
 	));
 }
 
-function msg_tx($usr_id, $msg, $rx_id, $send_now = false) {
-	
-	if (is_array($msg)) {
+function msg_tx($usr_id, $tx_msg, $rx_id, $send_now = false) {
+
+	if (is_array($tx_msg)) {
 		// Send a multi-part message one part at a time.
-		foreach ($msg as $msg_part) {
-			msg_tx($usr_id, $msg_part, $rx_id, $send_now);
+		foreach ($tx_msg as $tx_msg_part) {
+			$rsp = msg_tx($usr_id, $tx_msg_part, $rx_id, $send_now);
 		}
-		return;
+		return OK;
 	}
-	
+
 	$queued = date('Y-m-d H:i:s');
 	$rsp = db_insert('tx', array(
 		'rx_id' => $rx_id,
 		'usr_id' => $usr_id,
-		'msg' => $msg,
+		'msg' => $tx_msg,
 		'queued' => $queued
 	));
 	if (! $rsp['ok']) {
@@ -47,10 +47,7 @@ function msg_tx($usr_id, $msg, $rx_id, $send_now = false) {
 		msg_send_sms($tx_id);
 	}
 
-	return array(
-		'ok' => 1,
-		'tx_id' => $tx_id
-	);
+	return OK;
 }
 
 function msg_admin_tx($usr_id, $msg, $rx_id) {
@@ -292,17 +289,18 @@ function msg_signed_format($usr, $msg) {
 	return $msg_parts;
 }
 
-function msg_command($usr, $rx_id, $cmd) {
-	
-	include 'config.php';
-	
-	$cmd = strtolower($cmd);
-	$cmd = trim($cmd);
-	if (substr($cmd, 0, 1) != '/' &&
-	    ! (is_numeric($cmd) && strlen($cmd) == 5)) {
+function msg_is_command($msg) {
+
+	// Normalize and detect command formats: /stop or 12345 (for login)
+	$msg = strtolower($msg);
+	$msg = trim($msg);
+	if (substr($msg, 0, 1) != '/' &&                 // Slash command
+	    ! (is_numeric($msg) && strlen($msg) == 5)) { // Login code
 		return false;
 	}
-	
+
+	$cmd = $msg;
+
 	if (is_numeric($cmd)) {
 		$cmd = "login $cmd";
 	} else {
@@ -314,186 +312,38 @@ function msg_command($usr, $rx_id, $cmd) {
 		echo "cmd: $cmd\n";
 	}
 
-	if ($cmd == 'help') {
-		$msg = "/stop to leave\n/name [name] to change your name\n/invite [phone] to invite a friend\n/mute [name] to mute someone\n/website for archives URL\n/help [cmd] for more";
-	} else if (preg_match('/^help (stop|start|name|mute|admin|website|help)$/', $cmd, $matches)) {
-		$help_msgs = array(
-			'stop' => 'Send "/stop" to leave the chat. You can rejoin with /start at any time.',
-			'start' => 'Send "/start" to rejoin the chat.',
-			'name' => 'Send "/name susan" to set your name to "susan."',
-			'invite' => 'Send "/invite (718) 555-1212" to invite a friend by phone number.',
-			'mute' => 'Send "/mute chad" to stop getting messages from Chad.',
-			'unmute' => 'Send "/unmute chad" to stop muting messages from Chad.',
-			'website' => 'Send "/website" if you want to get the chat archive URL.',
-			'help' => 'Send "/help website" to learn more about the "/website" command.'
+	if (preg_match('/^\s*([a-z]+)\s*(\S*)$/', $cmd, $matches)) {
+		return array(
+			'id' => $matches[1],
+			'args' => $matches[2]
 		);
-		$help_cmd = $matches[1];
-		$msg = $help_msgs[$help_cmd];
-	} else if ($cmd == 'stop') {
-		usr_set_context($usr->id, 'stopped');
-		$msg = "You have left the chat. Send /start to rejoin.";
-	} else if ($cmd == 'start' ||
-	           $cmd == 'join') {
-		$msg = 'You have rejoined the chat. Welcome back!';
-		usr_set_context($usr->id, 'chat');
-	} else if (preg_match('/^name (.+)$/', $cmd, $matches)) {
-		$rsp = usr_set_name($usr, $rx_id, $matches[1]);
-		if ($rsp == OK) {
-			$msg = "From now on you will be known as {$usr->name}.";
-		} else {
-			global $usr_errors;
-			$msg = $usr_errors[$rsp];
-		}
-	} else if (preg_match('/^(un)?mute (.+)$/', $cmd, $matches)) {
-		$mute_active = ($matches[1] == 'un') ? false : true;
-		$mute_name = $matches[2];
-		$rsp = usr_set_mute($usr, $mute_name, $mute_active);
-		if ($rsp == USR_MUTED) {
-			$msg = "You will no longer receive messages from $mute_name.\nSend \"/unmute $mute_name\" to turn the mute off.";
-		} else if ($rsp == USR_UNMUTED) {
-			$msg = "Mute disabled, you will now receive messages from $mute_name.";
-		} else {
-			global $usr_errors;
-			$msg = $usr_errors[$rsp];
-		}
-	} else if ($cmd == 'website') {
-		$msg = "You can read the chat archives at:\n$website_url";
-	} else if (preg_match('/^invite (.+)$/', $cmd, $matches)) {
-		$phone = $matches[1];
-		usr_invite($usr, $rx_id, $phone);
-	} else if (preg_match('/^login (\d+)$/', $cmd, $matches)) {
-		$login_code = $matches[1];
-		$rsp = usr_complete_login($usr, $login_code);
-		if ($rsp == OK) {
-			$msg = "You are now logged in on $website_url.";
-		} else if ($rsp == E_USR_LOGIN_EXPIRED) {
-			$msg = "Oops, that login code expired. Please try again!";
-		} else {
-			$msg = "Oops, that login code didn't match any on record.";
-		}
-	} else if (usr_is_admin($usr) &&
-	           preg_match('/^approve (\d+)$/', $cmd, $matches)) {
-		$rsp = msg_approve($matches[1]);
-		if ($rsp == OK) {
-			$msg = null;
-		} else if ($rsp == E_MSG_NOT_FOUND) {
-			$msg = "Oops, couldn't find message rx {$matches[1]}.";
-		} else if ($rsp == E_MSG_SENDER_NOT_FOUND) {
-			$msg = "Oops, sender for message rx {$matches[1]} not found.";
-		} else if ($rsp == E_MSG_ALREADY_APPROVED) {
-			$msg = null;
-		} else {
-			$msg = "Oops, couldn't approve rx {$matches[1]}.";
-		}
-	} else if (usr_is_admin($usr) &&
-	           preg_match('/(un)?ban (.+)$/', $cmd, $matches)) {
-		$rsp = usr_get_by_name($matches[2]);
-		if (empty($rsp['usr'])) {
-			$msg = "Couldn't find user {$matches[2]}.";
-		} else {
-			$ban_usr = $rsp['usr'];
-			$ban_active = ($matches[1] == 'un') ? false : true;
-			$rsp = usr_set_ban($ban_usr, $ban_active);
-			if ($rsp == OK) {
-				if ($ban_active) {
-					$msg = "Banned user {$ban_usr->name}.";
-				} else {
-					$msg = "Unbanned user {$ban_usr->name}.";
-				}
-			} else {
-				$msg = "Oops, couldn't ban user {$ban_usr}.";
-			}
-		}
 	} else {
-		$msg = "Sorry, that command didn't work for some reason.";
+		return array(
+			'id' => 'unknown'
+		);
 	}
-
-	if (! empty($msg)) {
-		msg_tx($usr->id, $msg, $rx_id, "send now");
-	}
-	return true;
 }
 
-function msg_approve($id) {
-	
-	if (DEBUG) {
-		echo "msg_approve($id)\n";
-	}
-	
-	$db = db_setup();
-	$query = $db->prepare("
-		SELECT *
-		FROM rx
-		WHERE id = ?
-	");
-	$query->execute(array(
-		$id
-	));
-	$rx = $query->fetchObject();
-	if (! $rx) {
-		if (DEBUG) {
-			echo "E_MSG_NOT_FOUND\n";
-		}
-		return E_MSG_NOT_FOUND;
-	}
+function msg_chat($usr_id, $rx_msg, $rx_id) {
 
-	/*
-	$query = $db->prepare("
-		SELECT *
-		FROM tx
-		WHERE rx_id = ?
-	");
-	$query->execute(array(
-		$id
-	));
-	$exists = $query->fetchAll();
-	if (is_array($exists) &&
-	    count($exists) > 1) {
-		if (DEBUG) {
-			echo "E_MSG_ALREADY_APPROVED\n";
-		}
-		return E_MSG_ALREADY_APPROVED;
-	}
-	*/
+	$usr = usr_get_by_id($usr_id);
 
-	$query = $db->prepare("
-		SELECT *
-		FROM usr
-		WHERE id = ?
-	");
-	$query->execute(array(
-		$rx->usr_id
-	));
-	$usr = $query->fetchObject();
-	if (empty($usr)) {
-		if (DEBUG) {
-			echo "E_MSG_SENDER_NOT_FOUND\n";
-		}
-		return E_MSG_SENDER_NOT_FOUND;
-	}
-
-	if (DEBUG) {
-		echo "msg_chat(usr, $rx->id)\n";
-		print_r($usr);
-	}
-
-	// Ok, looks good, send it out!
-	msg_chat($usr, $id);
-}
-
-function msg_chat($usr, $rx_id) {
-	$msg_body = msg_body($rx_id);
 	if ($usr->status == 'banned') {
-		$banned_msg = msg_signed_format($usr, "[banned] $msg_body");
+		$banned_msg = msg_signed_format($usr, "[banned] $rx_msg");
 		msg_admin_tx($usr->id, $banned_msg, $rx_id);
-		return E_MSG_USER_BANNED;
+		return;
 	}
 	$channel_msg = "$usr->name: $msg_body";
 	$chat_id = msg_add_to_channel($rx_id, $usr->id, $channel_msg);
-	$active_usrs = usr_get_active($usr);
-	$msg = msg_signed_format($usr, $msg_body);
+	$rsp = usr_get_active($usr->id);
+	if ($rsp['ok']) {
+		$active_usrs = $rsp['active'];
+	}
+	$signed_msg = msg_signed_format($usr, $msg_body);
+	echo "msg_chat to active usrs:\n";
+	print_r($active_usrs);
 	foreach ($active_usrs as $tx_usr_id) {
-		msg_tx($tx_usr_id, $msg, $rx_id);
+		msg_tx($tx_usr_id, $signed_msg, $rx_id);
 	}
 	return $chat_id;
 }
