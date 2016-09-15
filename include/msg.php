@@ -326,25 +326,42 @@ function msg_is_command($msg) {
 
 function msg_chat($usr_id, $rx_msg, $rx_id) {
 
-	$usr = usr_get_by_id($usr_id);
+	$rsp = usr_get_by_id($usr_id);
+	util_ensure_rsp($rsp);
+	$usr = $rsp['usr'];
 
 	if ($usr->status == 'banned') {
+		// If the user is banned, just send their message to the admins.
 		$banned_msg = msg_signed_format($usr, "[banned] $rx_msg");
 		msg_admin_tx($usr->id, $banned_msg, $rx_id);
 		return;
 	}
-	$channel_msg = "$usr->name: $msg_body";
+
+	// TODO: don't bake in the username in the channel message.
+	$channel_msg = "$usr->name: $rx_msg";
 	$chat_id = msg_add_to_channel($rx_id, $usr->id, $channel_msg);
 	$rsp = usr_get_active($usr->id);
-	if ($rsp['ok']) {
-		$active_usrs = $rsp['active'];
+	util_ensure_rsp($rsp);
+
+	if (empty($rsp['active'])) {
+		// If there are no active users, we are kinda done.
+		// TODO: should we tell the user they're alone in the chat?
+		if (DEBUG) {
+			echo "Chat is empty.\n";
+		}
+		return;
 	}
-	$signed_msg = msg_signed_format($usr, $msg_body);
-	echo "msg_chat to active usrs:\n";
-	print_r($active_usrs);
+
+	$signed_msg = msg_signed_format($usr, $rx_msg);
+	$active_usrs = $rsp['active'];
 	foreach ($active_usrs as $tx_usr_id) {
 		msg_tx($tx_usr_id, $signed_msg, $rx_id);
 	}
+
+	if (DEBUG) {
+		echo "Sent message to " . count($active_usrs) . " active users.\n";
+	}
+
 	return $chat_id;
 }
 
