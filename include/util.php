@@ -12,7 +12,7 @@ function util_normalize_phone($phone) {
 }
 
 function util_uuid() {
-	
+
 	# https://secure.php.net/manual/en/function.uniqid.php#94959
 
 	# 32 bits for "time_low"
@@ -36,4 +36,13 @@ function util_uuid() {
 	$fmt = "%04x%04x-%04x-%04x-%04x-%04x%04x%04x";
 
 	return sprintf($fmt, $tl1, $tl2, $tm, $th, $cs, $nd1, $nd2, $nd3);
+}
+
+function util_ensure_rsp($rsp) {
+	if (! $rsp['ok']) {
+		if (DEBUG) {
+			print_r($rsp);
+		}
+		exit;
+	}
 }

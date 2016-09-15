@@ -4,6 +4,9 @@ define('USR_LOGIN_TTL', 15 * 60 * 60);
 
 function usr_get_by_phone($phone) {
 
+	// Of the usr_get_by_* functions, this one is different in that it will
+	// create a new usr record if one doesn't exist already.
+
 	$phone = util_normalize_phone($phone);
 
 	$rsp = db_single("
@@ -97,12 +100,10 @@ function usr_set_name($usr_id, $name, $rx_id) {
 		);
 	}
 
-	$rsp = db_single("
-		SELECT id
-		FROM usr
-		WHERE name = ?
-	", array($name));
-	$existing = $rsp['row'];
+	$rsp = usr_get_by_name($name);
+	util_ensure_rsp($rsp);
+
+	$existing = $rsp['usr'];
 
 	if (! empty($existing) &&
 	    $existing->id != $usr->id) {
@@ -112,11 +113,14 @@ function usr_set_name($usr_id, $name, $rx_id) {
 		);
 	}
 
-	db_update('usr', array(
+	$rsp = db_update('usr', array(
 		'name' => $name
 	), "id = $usr_id");
+	util_ensure_rsp($rsp);
 
 	$rsp = usr_get_by_id($usr_id);
+	util_ensure_rsp($rsp);
+
 	$usr = $rsp['usr'];
 	msg_admin_tx($usr_id, "[$usr->name is now known as $name]", $rx_id);
 
