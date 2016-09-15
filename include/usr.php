@@ -56,7 +56,7 @@ function usr_get_by_id($id) {
 		SELECT *
 		FROM usr
 		WHERE id = ?
-	", array($name));
+	", array($id));
 	if (! $rsp['ok']) {
 		return $rsp;
 	}
@@ -91,7 +91,7 @@ function usr_set_name($usr_id, $name) {
 		return 'err_name_format';
 	}
 	$db = db_setup();
-	
+
 	$query = $db->prepare("
 		SELECT id
 		FROM usr
@@ -105,7 +105,7 @@ function usr_set_name($usr_id, $name) {
 	    $existing->id != $usr->id) {
 		return 'err_name_exists';
 	}
-	
+
 	$query = $db->prepare("
 		UPDATE usr
 		SET name = ?
@@ -177,7 +177,7 @@ function usr_set_mute($usr, $name, $mute) {
 		$mute_usr->id
 	));
 	$exists = $query->fetchObject();
-	
+
 	if ($mute) {
 		if (empty($exists)) {
 			$created = date('Y-m-d H:i:s');
@@ -230,7 +230,7 @@ function usr_get_active($curr_usr_id = 0) {
 }
 
 function usr_get_web_active() {
-	
+
 	// Within the last 60 seconds
 	$recent_cutoff = date('Y-m-d H:i:s', time() - 60);
 
@@ -349,7 +349,7 @@ function usr_invite($usr, $rx_id, $phone) {
 		$phone
 	));
 	$exists = $query->fetchObject();
-	
+
 	if (empty($exists)) {
 		$query = $db->prepare("
 			INSERT INTO usr
@@ -428,7 +428,7 @@ function usr_complete_login($usr, $login_code) {
 	} else if (strtotime($login->created) < $ttl_cutoff) {
 		return 'err_login_expired';
 	}
-	
+
 	$db = db_setup();
 	$query = $db->prepare("
 		UPDATE usr_login
