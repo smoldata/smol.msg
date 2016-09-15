@@ -97,16 +97,7 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 
 	// First, figure out $count: how many people are in the chat?
 
-	$rsp = usr_get_active($usr_id);
-	$active = $rsp['active'];
-	if (empty($rsp['active'])) {
-		$count = xo('ctx_first_msg_first');
-	} else if (count($rsp['active']) == 1) {
-		$count = xo('ctx_first_msg_pair');
-	} else {
-		$num = count($rsp['active']);
-		$count = xo('ctx_first_msg_count', $num);
-	}
+	$count = xo_chat_count($usr_id);
 
 	// Next: send or not send the message? Result is stored in $sent.
 
@@ -129,7 +120,7 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 		msg_chat($usr_id, $first_msg, $first_msg_id);
 
 		// Yep, "we sent it."
-		if (empty($active)) {
+		if ($count == xo('ctx_chat_first')) {
 			$sent = xo('ctx_first_msg_saved'); // "saved." (archived)
 		} else {
 			$sent = xo('ctx_first_msg_sent');  // vs. "sent!"

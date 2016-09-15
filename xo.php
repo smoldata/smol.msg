@@ -4,14 +4,14 @@ global $xo_templates;
 $xo_templates = array(
 	'ctx_intro' =>            "Hello and welcome!\nPlease reply with the username you'd like to use. It doesn't have to be your actual name, get creative! You can change it later if you want.",
 	'ctx_name' =>             "Thanks, %s.\nSend your first message out?\n“%s”\nPlease reply Y or N.",
-	'ctx_first_msg' =>        "%s %s\nReply /stop to leave, or /help for more commands. Archives are available at:\n%s",
-	'ctx_first_msg_first' =>  "You are the first one in the chat.",
-	'ctx_first_msg_pair' =>   "You are now chatting with 1 other user.",
-	'ctx_first_msg_count' =>  "You are now chatting with %d others.",
+	'ctx_first_msg' =>        "%s %s\nReply /stop to leave, or send /help for more commands. Archives are available at:\n%s",
 	'ctx_first_msg_sent' =>   "Message sent!",
 	'ctx_first_msg_saved' =>  "Message saved.",
 	'ctx_first_msg_drop' =>   "Message NOT sent.",
 	'ctx_first_msg_huh' =>    "Huh? Message NOT sent.",
+	'ctx_chat_first' =>       "You are the first one in the chat.",
+	'ctx_chat_pair' =>        "You are now chatting with 1 other user.",
+	'ctx_chat_count' =>       "You are now chatting with %d others.",
 	'ctx_stopped' =>          "Hi, welcome back!\nYou will now receive messages again. Reply /stop to leave.",
 	'cmd_help' =>             "/stop to leave\n/name [name] to change your name\n/invite [phone] to invite a friend\n/mute [name] to mute someone\n/website for archives URL\n/help [cmd] for more",
 	'cmd_help_help' =>        "Learn more about commands: \"/help\" or \"/help [command]\".\nEx: send \"/help name\" to learn more about the \"/name\" command.",
@@ -22,8 +22,8 @@ $xo_templates = array(
 	'cmd_help_mute' =>        'Send "/mute chad" to stop getting messages from Chad.',
 	'cmd_help_unmute' =>      'Send "/unmute chad" to stop muting messages from Chad.',
 	'cmd_help_about' =>       'Send "/about" for info about the chat, including the archive URL.',
-	'cmd_stop' =>             "You have left the chat.\nYou can rejoin with \"/start\" later if you want.",
-	'cmd_start' =>            "Hello again!\nWelcome back, you will now receive chat messages.",
+	'cmd_stop' =>             "You have left the chat.\nSend /start to rejoin.",
+	'cmd_start' =>            "Hello again, welcome back! %s",
 	'cmd_name_changed' =>     "Name changed: you are now known as %s.",
 	'cmd_muted' =>            "Mute enabled: you will no longer receive messages from %s.\nSend \"/unmute %s\" to turn the mute off.",
 	'cmd_unmuted' =>          "Mute disabled: you will now receive messages from %s.",
@@ -60,4 +60,18 @@ function xo() {
 		}
 		return null;
 	}
+}
+
+function xo_chat_count($usr_id) {
+	$rsp = usr_get_active($usr_id);
+	$active = $rsp['active'];
+	if (empty($rsp['active'])) {
+		$count = xo('ctx_chat_first');
+	} else if (count($rsp['active']) == 1) {
+		$count = xo('ctx_chat_pair');
+	} else {
+		$num = count($rsp['active']);
+		$count = xo('ctx_chat_count', $num);
+	}
+	return $count;
 }

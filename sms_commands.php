@@ -58,7 +58,8 @@ function sms_command_start($usr_id) {
 	// Rejoin the chat: /start
 
 	usr_set_context($usr_id, 'chat');
-	return xo('cmd_start');
+	$count = xo_chat_count($usr_id);
+	return xo('cmd_start', $count);
 }
 
 function sms_command_name($usr_id, $new_name, $rx_id) {
