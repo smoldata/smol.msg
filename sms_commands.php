@@ -5,7 +5,7 @@ function sms_command($usr_id, $rx_msg, $rx_id, $cmd) {
 	// Call the command handler function
 	$cmd_func = "sms_command_{$cmd['id']}";
 	if (function_exists($cmd_func)) {
-		$tx_msg = call_user_func($cmd_func, $usr_id, $cmd['args']);
+		$tx_msg = call_user_func($cmd_func, $usr_id, $cmd['args'], $rx_id);
 	} else {
 		$tx_msg = sms_unknown_command();
 	}
@@ -61,11 +61,11 @@ function sms_command_start($usr_id) {
 	return xo('cmd_start');
 }
 
-function sms_command_name($usr_id, $new_name = null) {
+function sms_command_name($usr_id, $new_name, $rx_id) {
 
 	// Change your name: /name [new name]
 
-	$rsp = usr_set_name($usr_id, $new_name);
+	$rsp = usr_set_name($usr_id, $new_name, $rx_id);
 	if ($rsp['ok']) {
 		return xo('cmd_name_changed', $new_name);
 	} else {

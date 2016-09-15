@@ -33,9 +33,6 @@ function db_insert($tbl, $hash) {
 
 	$db = db_setup();
 
-	echo "db_insert $tbl:\n";
-	print_r($hash);
-
 	$columns = array_keys($hash);
 	$columns = implode(', ', $columns);
 	$placeholders = array_map(function($input) {
@@ -176,7 +173,7 @@ function db_query($sql, $values = null) {
 
 	$error_code = $query->errorCode();
 	$ok = ($error_code == '00000');
-	
+
 	if ($ok) {
 		return array(
 			'ok' => 1,

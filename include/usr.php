@@ -122,11 +122,55 @@ function usr_set_name($usr_id, $name, $rx_id) {
 	util_ensure_rsp($rsp);
 
 	$usr = $rsp['usr'];
-	msg_admin_tx($usr_id, "[$usr->name is now known as $name]", $rx_id);
+	$rsp = msg_admin_tx($usr_id, "[$usr->name is now known as $name]", $rx_id);
+	util_ensure_rsp($rsp);
 
 	return array(
 		'ok' => 1,
 		'name' => $name
+	);
+}
+
+function usr_get_first_msg_id($usr_id) {
+	$rsp = db_value("
+		SELECT id
+		FROM rx
+		WHERE usr_id = ?
+		ORDER BY received
+	", array($usr_id));
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+
+	$rsp['first_msg_id'] = $rsp['value'];
+	return $rsp;
+}
+
+function usr_get_first_msg($usr_id, $formatted = false) {
+	$rsp = db_value("
+		SELECT msg
+		FROM rx
+		WHERE usr_id = ?
+		ORDER BY received
+	", array($usr_id));
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	$msg = $rsp['value'];
+
+	$rsp = usr_get_by_id($usr_id);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	$usr = $rsp['usr'];
+
+	if (! empty($formatted)) {
+		$msg = msg_signed_format($usr, $msg, 50);
+	}
+
+	return array(
+		'ok' => 1,
+		'first_msg' => $msg
 	);
 }
 
@@ -272,11 +316,6 @@ function usr_get_admins($usr_id) {
 	}
 
 	$rsp['admins'] = $rsp['column'];
-	if (DEBUG) {
-		echo "Found admins:\n";
-		print_r($rsp);
-	}
-
 	return $rsp;
 }
 

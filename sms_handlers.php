@@ -65,18 +65,90 @@ function sms_name($usr_id, $rx_msg, $rx_id) {
 	// 'name' context is when we're prompting the user for theif first
 	// username.
 
-	include(__DIR__ . '/config.php');
-
 	$rsp = usr_set_name($usr_id, $rx_msg, $rx_id);
 	if ($rsp['ok']) {
-		usr_set_context($usr_id, 'chat');
-		$tx_msg = xo('ctx_name', $rsp['name'], $website_url);
+		$name = $rsp['name'];
+		usr_set_context($usr_id, 'first_msg');
+		$rsp = usr_get_first_msg($usr_id, 'formatted');
+		util_ensure_rsp($rsp);
+		$first_msg = $rsp['first_msg'];
+		$tx_msg = xo('ctx_name', $name, $first_msg);
 		msg_tx($usr_id, $tx_msg, $rx_id, "send now");
 	} else {
 		$tx_msg = xo($rsp['xo']);
 		$tx_msg .= "\nPlease try again.";
 		msg_tx($usr_id, $tx_msg, $rx_id, "send now");
 	}
+}
+
+function sms_first_msg($usr_id, $rx_msg, $rx_id) {
+
+	// 'first_msg' context is when the user is deciding whether they want
+	// to send out their first message.
+
+	// This is also where we transition into the chat, so we try to offer as
+	// much context as possible.
+
+	// For example:
+	// Message sent! You are now chatting with 17 others.
+	// Reply /stop to leave, or /help for more commands...
+
+	include(__DIR__ . '/config.php');
+
+	// First, figure out $count: how many people are in the chat?
+
+	$rsp = usr_get_active($usr_id);
+	$active = $rsp['active'];
+	if (empty($rsp['active'])) {
+		$count = xo('ctx_first_msg_first');
+	} else if (count($rsp['active']) == 1) {
+		$count = xo('ctx_first_msg_pair');
+	} else {
+		$num = count($rsp['active']);
+		$count = xo('ctx_first_msg_count', $num);
+	}
+
+	// Next: send or not send the message? Result is stored in $sent.
+
+	$yes_no = strtolower($rx_msg);
+	$yes_no = trim($yes_no);
+	$yes_no = mb_substr($yes_no, 0, 1);
+
+	if ($yes_no == 'y') {
+
+		// Ok, send it!!
+		$rsp = usr_get_first_msg_id($usr_id);
+		util_ensure_rsp($rsp);
+		$first_msg_id = $rsp['first_msg_id'];
+
+		$rsp = usr_get_first_msg($usr_id);
+		util_ensure_rsp($rsp);
+		$first_msg = $rsp['first_msg'];
+
+		// This is the part where we actually send the message: *whoosh*
+		msg_chat($usr_id, $first_msg, $first_msg_id);
+
+		// Yep, "we sent it."
+		if (empty($active)) {
+			$sent = xo('ctx_first_msg_saved'); // "saved." (archived)
+		} else {
+			$sent = xo('ctx_first_msg_sent');  // vs. "sent!"
+		}
+
+	} else if ($yes_no == 'n') {
+		// Nope, "didn't send."
+		$sent = xo('ctx_first_msg_drop');
+	} else {
+		// Huh? "Didn't send."
+		$sent = xo('ctx_first_msg_huh');
+	}
+
+	// Send the response message
+	$tx_msg = xo('ctx_first_msg', $sent, $count, $website_url);
+	msg_tx($usr_id, $tx_msg, $rx_id, "send now");
+
+	// Transition into chat
+	usr_set_context($usr_id, 'chat');
 }
 
 function sms_stopped($usr_id, $rx_msg, $rx_id) {

@@ -3,7 +3,15 @@
 global $xo_templates;
 $xo_templates = array(
 	'ctx_intro' =>            "Hello and welcome!\nPlease reply with the username you'd like to use. It doesn't have to be your actual name, get creative! You can change it later if you want.",
-	'ctx_name' =>             "Thanks %s, your first message has been sent!\nReply /stop to leave, or /help for more commands. Chat archives are available at:\n%s",
+	'ctx_name' =>             "Thanks, %s.\nSend your first message out?\n“%s”\nPlease reply Y or N.",
+	'ctx_first_msg' =>        "%s %s\nReply /stop to leave, or /help for more commands. Archives are available at:\n%s",
+	'ctx_first_msg_first' =>  "You are the first one in the chat.",
+	'ctx_first_msg_pair' =>   "You are now chatting with 1 other user.",
+	'ctx_first_msg_count' =>  "You are now chatting with %d others.",
+	'ctx_first_msg_sent' =>   "Message sent!",
+	'ctx_first_msg_saved' =>  "Message saved.",
+	'ctx_first_msg_drop' =>   "Message NOT sent.",
+	'ctx_first_msg_huh' =>    "Huh? Message NOT sent.",
 	'ctx_stopped' =>          "Hi, welcome back!\nYou will now receive messages again. Reply /stop to leave.",
 	'cmd_help' =>             "/stop to leave\n/name [name] to change your name\n/invite [phone] to invite a friend\n/mute [name] to mute someone\n/website for archives URL\n/help [cmd] for more",
 	'cmd_help_help' =>        "Learn more about commands: \"/help\" or \"/help [command]\".\nEx: send \"/help name\" to learn more about the \"/name\" command.",
@@ -41,7 +49,11 @@ function xo() {
 
 	if (isset($xo_templates[$template_id])) {
 		$args[0] = $xo_templates[$template_id];
-		return call_user_func_array('sprintf', $args);
+		$xo = call_user_func_array('sprintf', $args);
+		if (DEBUG && mb_strlen($xo) > 160) {
+			echo "[Warning] xo length > 160: $xo\n";
+		}
+		return $xo;
 	} else {
 		if (DEBUG) {
 			echo "Could not find xo template $template_id.";

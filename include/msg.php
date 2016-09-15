@@ -271,15 +271,15 @@ function msg_send_sms($tx) {
 	return $tx->id;
 }
 
-function msg_signed_format($usr, $msg) {
-	if (mb_strlen("$usr->name: $msg") <= 160) {
+function msg_signed_format($usr, $msg, $max_length = 160) {
+	if (mb_strlen("$usr->name: $msg") <= $max_length) {
 		return "$usr->name: $msg";
 	}
 	$msg_parts = array();
 	$words = mb_split(' ', $msg);
 	$part = "$usr->name:";
 	foreach ($words as $word) {
-		if (mb_strlen("$part $word") > 159) {
+		if (mb_strlen("$part $word") > ($max_length - 1)) {
 			$msg_parts[] = $part . '…';
 			$part = "$usr->name: …";
 		}
