@@ -1,6 +1,13 @@
 <?php
 
 include 'include/init.php';
+
+if (! empty($_POST['From']) &&
+    ! empty($_POST['Body'])) {
+	include __DIR__ . '/sms.php';
+	exit;
+}
+
 $topic = 'smol msg svc';
 
 ?>
@@ -34,7 +41,7 @@ $topic = 'smol msg svc';
 					<a href="#" class="logout">Logout</a>
 				</div>
 				<textarea class="msg" name="msg" placeholder="Type your message here, then press [return]" cols="80" rows="3"></textarea>
-				
+
 				<!--<div class="relative">
 					<div id="about">
 						<div class="relative">
