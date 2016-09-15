@@ -11,6 +11,11 @@ if (empty($_POST['Body']) ||
 	die("Please use a POST request with 'Body' and 'From' arguments.");
 }
 
+if (empty($_POST['AccountSid']) ||
+    $_POST['AccountSid'] != $twilio_account_sid) {
+	die("Oops, your Twilio AccountSid argument didn't match what we were expecting.");
+}
+
 // Load an existing $usr object for the phone number, or create one
 // if it doesn't exist yet.
 $rsp = usr_get_by_phone($_POST['From']);

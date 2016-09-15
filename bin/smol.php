@@ -20,7 +20,8 @@ if (! empty($argv[2])) {
 
 $post = array(
 	'From' => $from,
-	'Body' => $msg
+	'Body' => $msg,
+	'AccountSid' => $twilio_account_sid
 );
 
 $protocol = ($use_ssl) ? 'https' : 'http';
