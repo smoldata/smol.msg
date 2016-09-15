@@ -85,40 +85,45 @@ function usr_set_context($usr_id, $context) {
 	), "id = $usr_id");
 }
 
-function usr_set_name($usr_id, $name) {
-	$name = trim($name);
-	if (! preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
-		return 'err_name_format';
-	}
-	$db = db_setup();
+function usr_set_name($usr_id, $name, $rx_id) {
 
-	$query = $db->prepare("
+	$name = trim($name);
+	$usr_id = intval($usr_id);
+
+	if (! preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
+		return array(
+			'ok' => 0,
+			'xo' => 'err_name_format'
+		);
+	}
+
+	$rsp = db_single("
 		SELECT id
 		FROM usr
 		WHERE name = ?
-	");
-	$query->execute(array(
-		$name
-	));
-	$existing = $query->fetchObject();
+	", array($name));
+	$existing = $rsp['row'];
+
 	if (! empty($existing) &&
 	    $existing->id != $usr->id) {
-		return 'err_name_exists';
+		return array(
+			'ok' => 0,
+			'xo' => 'err_name_exists'
+		);
 	}
 
-	$query = $db->prepare("
-		UPDATE usr
-		SET name = ?
-		WHERE id = ?
-	");
-	$query->execute(array(
-		$name,
-		$usr->id
-	));
+	db_update('usr', array(
+		'name' => $name
+	), "id = $usr_id");
 
-	msg_admin_tx($usr->id, "[$usr->name is now known as $name]", $rx_id);
+	$rsp = usr_get_by_id($usr_id);
+	$usr = $rsp['usr'];
+	msg_admin_tx($usr_id, "[$usr->name is now known as $name]", $rx_id);
 
-	return OK;
+	return array(
+		'ok' => 1,
+		'name' => $name
+	);
 }
 
 function usr_set_status($usr, $status) {

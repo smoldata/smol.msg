@@ -25,7 +25,7 @@ $post = array(
 );
 
 $protocol = ($use_ssl) ? 'https' : 'http';
-$url = "$protocol://$website_url/sms.php?debug=1";
+$url = "$protocol://$website_url/?debug=1";
 $post_str = http_build_query($post);
 
 echo "Sending '$msg' from $from...\n";

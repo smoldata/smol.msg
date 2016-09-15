@@ -26,7 +26,15 @@ function sms_intro($usr_id, $rx_msg, $rx_id) {
 	// 'intro' is the default context for new users, assigned after they've
 	// sent their first message.
 
-	$usr = usr_get_by_id($usr_id);
+	$rsp = usr_get_by_id($usr_id);
+	if (! $rsp['ok']) {
+		if (DEBUG) {
+			print_r($rsp);
+		}
+		exit;
+	}
+
+	$usr = $rsp['usr'];
 
 	// Send the first incoming message out to admins for
 	// moderation.
@@ -51,7 +59,7 @@ function sms_invited($usr_id, $rx_msg, $rx_id) {
 
 	// TODO: inform person who invited
 }
-	
+
 function sms_name($usr_id, $rx_msg, $rx_id) {
 
 	// 'name' context is when we're prompting the user for theif first
@@ -59,13 +67,13 @@ function sms_name($usr_id, $rx_msg, $rx_id) {
 
 	include(__DIR__ . '/config.php');
 
-	$rsp = usr_set_name($usr, $rx_msg);
-	if ($rsp == OK) {
+	$rsp = usr_set_name($usr_id, $rx_msg, $rx_id);
+	if ($rsp['ok']) {
 		usr_set_context($usr_id, 'chat');
-		$tx_msg = xo('ctx_name', $website_url);
+		$tx_msg = xo('ctx_name', $rsp['name'], $website_url);
 		msg_tx($usr_id, $tx_msg, $rx_id, "send now");
 	} else {
-		$tx_msg = xo($rsp);
+		$tx_msg = xo($rsp['xo']);
 		$tx_msg .= "\nPlease try again.";
 		msg_tx($usr_id, $tx_msg, $rx_id, "send now");
 	}

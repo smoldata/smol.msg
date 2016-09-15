@@ -66,10 +66,10 @@ function sms_command_name($usr_id, $new_name = null) {
 	// Change your name: /name [new name]
 
 	$rsp = usr_set_name($usr_id, $new_name);
-	if ($rsp == OK) {
+	if ($rsp['ok']) {
 		return xo('cmd_name_changed', $new_name);
 	} else {
-		return xo($rsp);
+		return xo($rsp['xo']);
 	}
 }
 
@@ -86,7 +86,7 @@ function sms_command_mute($usr_id, $mute_name = null) {
 }
 
 function sms_command_unmute($usr_id, $mute_name = null) {
-	
+
 	// Start getting messages from a particular user: /unmute [name]
 
 	$rsp = usr_set_mute($usr, $mute_name, false);
@@ -120,7 +120,7 @@ function sms_command_invite($usr_id, $invite_phone) {
 		return xo($rsp);
 	}
 }
-	
+
 function sms_command_login($usr_id, $login_code) {
 
 	// Login from the website: /login [code]

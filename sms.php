@@ -1,8 +1,8 @@
 <?php
 
-include(__DIR__ . '/include/init.php');
-include(__DIR__ . '/sms_commands.php');
-include(__DIR__ . '/sms_handlers.php');
+include_once(__DIR__ . '/include/init.php');
+include_once(__DIR__ . '/sms_commands.php');
+include_once(__DIR__ . '/sms_handlers.php');
 
 // At a minimum, we need to know the 'what' and the 'who.' These are provided
 // by the Twilio service as POST variables Body & From.

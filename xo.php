@@ -3,7 +3,7 @@
 global $xo_templates;
 $xo_templates = array(
 	'ctx_intro' =>            "Hello and welcome!\nPlease reply with the username you'd like to use. It doesn't have to be your actual name, get creative! You can change it later if you want.",
-	'ctx_name' =>             "Your first message has been sent!\nReply /stop to leave, or /help for more commands. Chat archives are available at:\n%s",
+	'ctx_name' =>             "Thanks %s, your first message has been sent!\nReply /stop to leave, or /help for more commands. Chat archives are available at:\n%s",
 	'ctx_stopped' =>          "Hi, welcome back!\nYou will now receive messages again. Reply /stop to leave.",
 	'cmd_help' =>             "/stop to leave\n/name [name] to change your name\n/invite [phone] to invite a friend\n/mute [name] to mute someone\n/website for archives URL\n/help [cmd] for more",
 	'cmd_help_help' =>        "Learn more about commands: \"/help\" or \"/help [command]\".\nEx: send \"/help name\" to learn more about the \"/name\" command.",

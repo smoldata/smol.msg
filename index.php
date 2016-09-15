@@ -1,6 +1,6 @@
 <?php
 
-include 'include/init.php';
+include_once(__DIR__ . '/include/init.php');
 
 if (! empty($_POST['From']) &&
     ! empty($_POST['Body'])) {
