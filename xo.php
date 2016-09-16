@@ -3,11 +3,13 @@
 global $xo_templates;
 $xo_templates = array(
 	'ctx_intro' =>            "Welcome!\nPlease reply with the username you'd like to use. It doesn't have to be your actual name, get creative! You can change it later if you want.",
+	'ctx_intro_admin' =>      "Looks like you're the first one here. You get to be the first admin user! The parts [in brackets] are admin-only messages. \"/admin [name]\" to promote someone else.",
 	'ctx_name' =>             "Thanks, %s.\nSend your first message out?\n“%s”\nPlease reply Y or N.",
 	'ctx_first_msg' =>        "%s\nReply /stop to leave, or send /help for more commands. Archives are available at:\n%s",
 	'ctx_first_msg_sent' =>   "Message sent!",
 	'ctx_first_msg_saved' =>  "Message saved.",
 	'ctx_first_msg_drop' =>   "Message NOT sent.",
+	'ctx_first_msg_held' =>   "Your first message was held for moderation.",
 	'ctx_first_msg_huh' =>    "Huh? Message NOT sent.",
 	'ctx_chat_first' =>       "You are the first one in the chat.",
 	'ctx_chat_pair' =>        "You are now chatting with 1 other user.",
@@ -40,6 +42,9 @@ $xo_templates = array(
 	'cmd_unbanned' =>         "User %s has been UNbanned.",
 	'cmd_admin' =>            "User %s is now an admin.",
 	'cmd_mod' =>              "User %s is now a moderator.",
+	'cmd_hold_created' =>     "Message %d has been held.\n Use \"/approve %d\" to send it.",
+	'cmd_hold_exists' =>      "Someone beat you to it. Message %d is already held.\nUse \"/approve %d\" to send it.",
+	'cmd_hold_announce' =>    "User %s has held message %d.\nUse \"/approve %d\" to send it.",
 	'err_command_unknown' =>  "Hrm, I don't know the \"/%s\" command",
 	'err_command_no_help' =>  "There is a \"/%s\" command, but it doesn't have any help info.",
 	'err_command_empty_tx' => "Welp, we received your \"/%s\" command, but could not come up with anything useful to send you back.\nSo, instead you are seeing this. :shrug:",
@@ -51,7 +56,9 @@ $xo_templates = array(
 	'err_cannot_mute_self' => "Uhh, sorry you cannot mute yourself!",
 	'err_invalid_phone' =>    "Hmm. That phone number doesn't look valid.",
 	'err_login_invalid' =>    "Sorry, that login code didn't work. Try again?",
-	'err_login_expired' =>    "Oops, that login code has expired. Try again?"
+	'err_login_expired' =>    "Oops, that login code has expired. Try again?",
+	'err_msg_unknown' =>      "Huh, message with rx ID %d does not exist.",
+	'err_db' =>               "Oh no! There was a database-related error."
 );
 
 function xo() {
@@ -88,4 +95,15 @@ function xo_chat_count($usr_id) {
 		$count = xo('ctx_chat_count', $num);
 	}
 	return $count;
+}
+
+function xo_first_msg_held($usr_id) {
+
+	include(__DIR__ . '/config.php');
+
+	$first_msg = xo('ctx_first_msg_held');
+	$count = xo_chat_count($usr_id);
+	$tx_msg = xo('ctx_first_msg', "$first_msg $count", $website_url);
+
+	return $xo;
 }

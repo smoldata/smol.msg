@@ -36,6 +36,12 @@ function sms_intro($usr_id, $rx_msg, $rx_id) {
 
 	$usr = $rsp['usr'];
 
+	// Is this the first user? If so, make 'em the admin.
+	if (usr_is_first()) {
+		usr_set_status($usr_id, 'admin');
+		msg_tx($usr_id, xo('ctx_intro_admin'), $rx_id);
+	}
+
 	// Send the first incoming message out to admins for
 	// moderation.
 	$admin_options = "[/hold {$rx_id} /ban $usr->name]";
@@ -94,11 +100,27 @@ function sms_name($usr_id, $rx_msg, $rx_id) {
 			msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 		} else {
 			// Ask to send out the first message.
-			usr_set_context($usr_id, 'first_msg');
 			$rsp = usr_get_first_msg($usr_id, 'formatted');
 			util_ensure_rsp($rsp);
 			$first_msg = $rsp['first_msg'];
-			$tx_msg = xo('ctx_name', $name, $first_msg);
+			$first_msg_held = $rsp['first_msg_held'];
+
+			if ($first_msg_held) {
+				// On second thought, the message was held, so
+				// no need to ask about it.
+
+				// Just join the chat!
+				usr_set_context($usr_id, 'chat');
+
+				// Announce that the user has joined the chat
+				$announcement = xo('cmd_start_announce', $usr->name);
+				msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+
+				$tx_msg = xo_first_msg_held($usr_id);
+			} else {
+				usr_set_context($usr_id, 'first_msg');
+				$tx_msg = xo('ctx_name', $name, $first_msg);
+			}
 		}
 
 	} else {
@@ -149,13 +171,28 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 	if ($yes_no == 'y') {
 
 		// Ok, send it!!
-		$rsp = usr_get_first_msg_id($usr_id);
-		util_ensure_rsp($rsp);
-		$first_msg_id = $rsp['first_msg_id'];
-
 		$rsp = usr_get_first_msg($usr_id);
 		util_ensure_rsp($rsp);
 		$first_msg = $rsp['first_msg'];
+		$first_msg_id = $rsp['first_msg_id'];
+		$first_msg_held = $rsp['first_msg_held'];
+
+		if ($first_msg_held) {
+
+			// On second thought, the message was held, so I guess
+			// we will just bail out now.
+
+			// Instead, join the chat!
+			usr_set_context($usr_id, 'chat');
+
+			// Announce that the user has joined the chat
+			$announcement = xo('cmd_start_announce', $usr->name);
+			msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+
+			$tx_msg = xo_first_msg_held($usr_id);
+			msg_tx($usr_id, $tx_msg, $rx_id, "send now");
+			return;
+		}
 
 		// This is the part where we actually send the message: *whoosh*
 		msg_chat($usr_id, $first_msg, $first_msg_id);

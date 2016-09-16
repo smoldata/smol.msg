@@ -68,11 +68,7 @@ function usr_get_by_phone($phone) {
 	if (! $rsp['ok']) {
 		return $rsp;
 	}
-
-	// Is this the first user? If so, make 'em the admin.
-	if (usr_is_first()) {
-		usr_set_status($rsp['insert_id'], 'admin');
-	}
+	$usr_id = $rsp['insert_id'];
 
 	// Return the newly created record
 	return usr_get_by_phone($phone);
@@ -166,32 +162,19 @@ function usr_set_name($usr_id, $name, $rx_id) {
 	);
 }
 
-function usr_get_first_msg_id($usr_id) {
-	$rsp = db_value("
-		SELECT id
-		FROM rx
-		WHERE usr_id = ?
-		ORDER BY received
-	", array($usr_id));
-	if (! $rsp['ok']) {
-		return $rsp;
-	}
-
-	$rsp['first_msg_id'] = $rsp['value'];
-	return $rsp;
-}
-
 function usr_get_first_msg($usr_id, $formatted = false) {
-	$rsp = db_value("
-		SELECT msg
+	$rsp = db_single("
+		SELECT *
 		FROM rx
 		WHERE usr_id = ?
 		ORDER BY received
+		LIMIT 1
 	", array($usr_id));
 	if (! $rsp['ok']) {
 		return $rsp;
 	}
-	$msg = $rsp['value'];
+	$first_msg = $rsp['row'];
+	$msg = $first_msg->msg;
 
 	$rsp = usr_get_by_id($usr_id);
 	if (! $rsp['ok']) {
@@ -200,12 +183,22 @@ function usr_get_first_msg($usr_id, $formatted = false) {
 	$usr = $rsp['usr'];
 
 	if (! empty($formatted)) {
-		$msg = msg_signed_format($usr, $msg, 50);
+		$msg = msg_signed_format($usr, $first_msg->msg, 50);
 	}
+
+	$rsp = db_value("
+		SELECT COUNT(rx_id)
+		FROM rx_hold
+		WHERE rx_id = ?
+		  AND active = 1
+	", array($first_msg->id));
+	$held = $rsp['value'];
 
 	return array(
 		'ok' => 1,
-		'first_msg' => $msg
+		'first_msg' => $msg,
+		'first_msg_id' => $first_msg->id,
+		'first_msg_held' => $held
 	);
 }
 

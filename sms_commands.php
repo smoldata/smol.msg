@@ -171,7 +171,51 @@ function sms_command_login($usr_id, $login_code) {
 
 function sms_command_hold($usr_id, $msg_id, $rx_id) {
 
-	// TODO: write this /hold [msg id]
+	// Hold a message (admin users only)
+
+	if (! usr_is_admin($usr_id)) {
+		return xo('err_command_unknown');
+	}
+
+	$msg_id = intval($msg_id);
+
+	$rsp = db_single("
+		SELECT *
+		FROM rx
+		WHERE id = ?
+	", array($msg_id));
+	if (empty($rsp['row'])) {
+		return xo('err_msg_unknown', $msg_id);
+	}
+
+	$rsp = db_single("
+		SELECT *
+		FROM rx_hold
+		WHERE rx_id = ?
+	", array($msg_id));
+	$existing = $rsp['row'];
+
+	if (empty($existing)) {
+		$held = date('Y-m-d H:i:s');
+		$rsp = db_insert('rx_hold', array(
+			'rx_id' => $msg_id,
+			'usr_id' => $usr_id,
+			'active' => 1,
+			'held' => $held
+		));
+
+		$usr = usr_get($usr_id);
+		$announcement = xo('cmd_hold_announce', $usr->name, $msg_id, $msg_id);
+		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+
+		if ($rsp['ok']) {
+			return xo('cmd_hold_created', $msg_id, $msg_id);
+		} else {
+			return xo('err_db');
+		}
+	} else {
+		return xo('cmd_hold_exists', $msg_id, $msg_id);
+	}
 }
 
 function sms_command_ban($usr_id, $who, $rx_id) {

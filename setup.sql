@@ -66,3 +66,13 @@ CREATE TABLE `usr_login` (
   `created` datetime DEFAULT NULL,
   PRIMARY KEY (`login_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `rx_hold`;
+CREATE TABLE `rx_hold` (
+  `rx_id` int(11) unsigned NOT NULL,
+  `usr_id` int(11) DEFAULT NULL,
+  `active` int(11) DEFAULT '1',
+  `held` datetime DEFAULT NULL,
+  `accepted` datetime DEFAULT NULL,
+  PRIMARY KEY (`rx_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
