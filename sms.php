@@ -45,7 +45,7 @@ $rx_id = $rsp['insert_id'];
 //   2. Proceed with a handler function, according to the user's context
 
 $cmd = msg_is_command($rx_msg);
-print_r($cmd);
+
 if ($cmd) {
 	// User is trying to issue a command
 	// See: sms_commands.php

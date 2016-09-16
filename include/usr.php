@@ -209,66 +209,59 @@ function usr_is_first() {
 }
 
 function usr_set_mute($usr, $name, $mute) {
-	$db = db_setup();
-	$query = $db->prepare("
-		SELECT id
-		FROM usr
-		WHERE name = ?
-	");
-	$query->execute(array(
-		$name
-	));
-	$mute_usr = $query->fetchObject();
-	if (empty($mute_usr)) {
-		return 'err_user_not_found';
+	$rsp = usr_get_by_name($name);
+	if (empty($rsp['usr'])) {
+		return array(
+			'ok' => 0,
+			'xo' => 'err_user_not_found'
+		);
 	}
+	$mute_usr = $rsp['usr'];
 
 	if ($mute_usr->id == $usr->id) {
-		return 'err_cannot_mute_self';
+		return array(
+			'ok' => 0,
+			'xo' => 'err_cannot_mute_self'
+		);
 	}
 
-	$query = $db->prepare("
+	$rsp = db_single("
 		SELECT *
 		FROM usr_mute
 		WHERE usr_id = ?
 		  AND muted_id = ?
-	");
-	$query->execute(array(
+	", array(
 		$usr->id,
 		$mute_usr->id
 	));
-	$exists = $query->fetchObject();
+	$exists = $rsp['row'];
 
 	if ($mute) {
 		if (empty($exists)) {
 			$created = date('Y-m-d H:i:s');
-			$query = $db->prepare("
-				INSERT INTO usr_mute
-				(usr_id, muted_id, created)
-				VALUES (?, ?, ?)
-			");
-			$query->execute(array(
-				$usr->id,
-				$mute_usr->id,
-				$created
+			return db_insert('usr_mute', array(
+				'usr_id' => $usr->id,
+				'muted_id' => $mute_usr->id,
+				'created' => $created
 			));
+		} else {
+			$created = date('Y-m-d H:i:s');
+			$where = "usr_id = $usr->id AND muted_id = $mute_usr->id";
+			return db_update('usr_mute', array(
+				'active' => 1,
+				'created' => $created
+			), $where);
 		}
-		return OK;
 	} else {
 		if (! empty($exists)) {
-			$query = $db->prepare("
-				DELETE FROM usr_mute
-				WHERE usr_id = ?
-				  AND muted_id = ?
-			");
-			$query->execute(array(
-				$usr->id,
-				$mute_usr->id
-			));
-			return OK;
-		} else {
-			return OK;
+			$deleted = date('Y-m-d H:i:s');
+			$where = "usr_id = $usr->id AND muted_id = $mute_usr->id";
+			return db_update('usr_mute', array(
+				'active' => 0,
+				'deleted' => $deleted
+			), $where);
 		}
+		return array('ok' => 1);
 	}
 }
 

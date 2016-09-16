@@ -88,11 +88,11 @@ function sms_command_mute($usr_id, $mute_name = null) {
 
 	// Stop getting messages from a particular user: /mute [name]
 
-	$rsp = usr_set_mute($usr, $mute_name, true);
-	if ($rsp == OK) {
+	$rsp = usr_set_mute($usr_id, $mute_name, true);
+	if ($rsp['ok']) {
 		return xo('cmd_muted', $mute_name, $mute_name);
 	} else {
-		return xo($rsp);
+		return xo($rsp['xo']);
 	}
 }
 
