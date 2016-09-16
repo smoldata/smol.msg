@@ -4,10 +4,11 @@ function sms_command($usr_id, $rx_msg, $rx_id, $cmd) {
 
 	// Call the command handler function
 	$cmd_func = "sms_command_{$cmd['id']}";
+
 	if (function_exists($cmd_func)) {
 		$tx_msg = call_user_func($cmd_func, $usr_id, $cmd['args'], $rx_id);
 	} else {
-		$tx_msg = sms_unknown_command();
+		$tx_msg = sms_command_unknown();
 	}
 
 	// Send the response (there should always be a response)
@@ -57,9 +58,18 @@ function sms_command_start($usr_id) {
 
 	// Rejoin the chat: /start
 
-	usr_set_context($usr_id, 'chat');
-	$count = xo_chat_count($usr_id);
-	return xo('cmd_start', $count);
+	$rsp = usr_get_by_id($usr_id);
+	util_ensure_rsp($rsp);
+	$usr = $rsp['usr'];
+
+	if ($usr->context == 'invited') {
+		usr_set_context($usr_id, 'intro');
+		return xo('ctx_intro');
+	} else {
+		usr_set_context($usr_id, 'chat');
+		$count = xo_chat_count($usr_id);
+		return xo('cmd_start', $count);
+	}
 }
 
 function sms_command_name($usr_id, $new_name, $rx_id) {
@@ -110,15 +120,19 @@ function sms_command_about($usr_id) {
 	return xo('cmd_about', $user_count, $website_url);
 }
 
-function sms_command_invite($usr_id, $invite_phone) {
+function sms_command_invite($usr_id, $invite_phone, $rx_id) {
 
 	// Invite a friend to join the chat: /invite [phone]
 
-	$rsp = usr_invite($usr, $invite_phone);
-	if ($rsp == OK) {
-		return xo('cmd_invited');
+	$rsp = usr_invite($usr_id, $invite_phone);
+	if ($rsp['ok']) {
+		$inviter = $rsp['inviter'];
+		$invited_id = $rsp['invited_id'];
+		$invitation = xo('cmd_invite_hello', $inviter->name, $inviter->phone);
+		msg_tx($invited_id, $invitation, $rx_id);
+		return xo('cmd_invite_sent');
 	} else {
-		return xo($rsp);
+		return xo($rsp['xo']);
 	}
 }
 
@@ -128,7 +142,9 @@ function sms_command_login($usr_id, $login_code) {
 
 	include(__DIR__ . '/config.php');
 
-	$rsp = usr_complete_login($usr, $login_code);
+
+
+	$rsp = usr_complete_login($usr_id, $login_code);
 	if ($rsp == OK) {
 		return xo('cmd_login_success', $website_url);
 	} else {
@@ -149,4 +165,8 @@ function sms_command_ban($usr_id, $user) {
 function sms_command_unban($usr_id, $user) {
 
 	// TODO: write this /unban [user]
+}
+
+function sms_command_unknown($usr_id) {
+	return xo('err_command_unknown');
 }

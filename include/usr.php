@@ -50,6 +50,11 @@ function usr_get_by_phone($phone) {
 		return $rsp;
 	}
 
+	// Is this the first user? If so, make 'em the admin.
+	if (usr_is_first()) {
+		usr_set_status($rsp['insert_id'], 'admin');
+	}
+
 	// Return the newly created record
 	return usr_get_by_phone($phone);
 }
@@ -174,17 +179,11 @@ function usr_get_first_msg($usr_id, $formatted = false) {
 	);
 }
 
-function usr_set_status($usr, $status) {
-	$db = db_setup();
-	$query = $db->prepare("
-		UPDATE usr
-		SET status = ?
-		WHERE id = ?
-	");
-	$query->execute(array(
-		$status,
-		$usr->id
-	));
+function usr_set_status($usr_id, $status) {
+	$usr_id = intval($usr_id);
+	return db_update('usr', array(
+		'status' => $status
+	), "id = $usr_id");
 }
 
 function usr_set_ban($usr, $ban_active = true) {
@@ -198,6 +197,15 @@ function usr_set_ban($usr, $ban_active = true) {
 
 function usr_is_admin($usr) {
 	return ($usr->status == 'admin');
+}
+
+function usr_is_first() {
+	$rsp = db_value("
+		SELECT COUNT(id)
+		FROM usr
+		WHERE status = 'admin'
+	");
+	return ($rsp['value'] == 0);
 }
 
 function usr_set_mute($usr, $name, $mute) {
@@ -381,38 +389,46 @@ function usr_update_active_time($usr_id, $column = 'active') {
 	));
 }
 
-function usr_invite($usr, $rx_id, $phone) {
-	$phone = util_normalize_phone($phone);
-	if (! $phone) {
-		return 'err_invalid_phone';
+function usr_invite($inviter_id, $invited_phone) {
+
+	$invited_phone = util_normalize_phone($invited_phone);
+	if (! $invited_phone) {
+		return array(
+			'ok' => 0,
+			'xo' => 'err_invalid_phone'
+		);
 	}
 
-	$db = db_setup();
-	$query = $db->prepare("
+	$rsp = usr_get_by_id($inviter_id);
+	util_ensure_rsp($rsp);
+	$inviter = $rsp['usr'];
+
+	// First make sure the phone number is a new one.
+	$rsp = db_single("
 		SELECT *
 		FROM usr
 		WHERE phone = ?
-	");
-	$query->execute(array(
-		$phone
-	));
-	$exists = $query->fetchObject();
+	", array($invited_phone));
 
-	if (empty($exists)) {
-		$query = $db->prepare("
-			INSERT INTO usr
-			(phone, name, context, joined)
-			VALUES (?, ?, ?, ?)
-		");
-		$query->execute(array(
-			$phone,
-			substr($phone, -4, 4),
-			'invited',
-			date('Y-m-d H:i:s')
+	if (empty($rsp['row'])) {
+		$rsp = db_insert('usr', array(
+			'phone' => $invited_phone,
+			'name' => substr($invited_phone, -4, 4),
+			'context' => 'invited',
+			'joined' => date('Y-m-d H:i:s'),
+			'invited_by' => $inviter_id
 		));
-		$invited_id = $db->lastInsertId();
-		$msg = "Hello! $usr->name has invited you to an SMS chat. Reply \"ok\" to join.";
-		msg_tx($invited_id, $msg, $rx_id, "send now");
+		util_ensure_rsp($rsp);
+		return array(
+			'ok' => 1,
+			'inviter' => $inviter,
+			'invited_id' => $rsp['insert_id']
+		);
+	} else {
+		return array(
+			'ok' => 0,
+			'xo' => 'err_invited_already_exists'
+		);
 	}
 }
 
@@ -468,7 +484,7 @@ function usr_get_login($login_code) {
 	return $query->fetchObject();
 }
 
-function usr_complete_login($usr, $login_code) {
+function usr_complete_login($usr_id, $login_code) {
 	$login = usr_get_login($login_code);
 	$ttl_cutoff = time() - USR_LOGIN_TTL;
 	if (empty($login)) {
@@ -484,7 +500,7 @@ function usr_complete_login($usr, $login_code) {
 		WHERE login_code = ?
 	");
 	$query->execute(array(
-		$usr->id,
+		$usr_id,
 		$login_code
 	));
 	return OK;

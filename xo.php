@@ -2,9 +2,9 @@
 
 global $xo_templates;
 $xo_templates = array(
-	'ctx_intro' =>            "Hello and welcome!\nPlease reply with the username you'd like to use. It doesn't have to be your actual name, get creative! You can change it later if you want.",
+	'ctx_intro' =>            "Welcome!\nPlease reply with the username you'd like to use. It doesn't have to be your actual name, get creative! You can change it later if you want.",
 	'ctx_name' =>             "Thanks, %s.\nSend your first message out?\n“%s”\nPlease reply Y or N.",
-	'ctx_first_msg' =>        "%s %s\nReply /stop to leave, or send /help for more commands. Archives are available at:\n%s",
+	'ctx_first_msg' =>        "%s\nReply /stop to leave, or send /help for more commands. Archives are available at:\n%s",
 	'ctx_first_msg_sent' =>   "Message sent!",
 	'ctx_first_msg_saved' =>  "Message saved.",
 	'ctx_first_msg_drop' =>   "Message NOT sent.",
@@ -13,12 +13,13 @@ $xo_templates = array(
 	'ctx_chat_pair' =>        "You are now chatting with 1 other user.",
 	'ctx_chat_count' =>       "You are now chatting with %d others.",
 	'ctx_stopped' =>          "Hi, welcome back!\nYou will now receive messages again. Reply /stop to leave.",
+	'ctx_invite_sorry' =>     "Sorry to bother you! If you change your mind, send /start to join the chat.",
 	'cmd_help' =>             "/stop to leave\n/name [name] to change your name\n/invite [phone] to invite a friend\n/mute [name] to mute someone\n/website for archives URL\n/help [cmd] for more",
 	'cmd_help_help' =>        "Learn more about commands: \"/help\" or \"/help [command]\".\nEx: send \"/help name\" to learn more about the \"/name\" command.",
 	'cmd_help_stop' =>        'Send "/stop" to leave the chat (or just plain "STOP"). You can rejoin with "/start" later if you want.',
 	'cmd_help_start' =>       'Send "/start" to rejoin the chat.',
 	'cmd_help_name' =>        'Send "/name susan" to set your username to "susan."',
-	'cmd_help_invite' =>      'Send "/invite xxx-xxx-xxxx" to invite somebody by phone number. The dashes between numbers are optional.',
+	'cmd_help_invite' =>      'Send "/invite xxx-xxx-xxxx" to invite somebody by phone number. The dashes between the numbers are optional.',
 	'cmd_help_mute' =>        'Send "/mute chad" to stop getting messages from Chad.',
 	'cmd_help_unmute' =>      'Send "/unmute chad" to stop muting messages from Chad.',
 	'cmd_help_about' =>       'Send "/about" for info about the chat, including the archive URL.',
@@ -28,6 +29,8 @@ $xo_templates = array(
 	'cmd_muted' =>            "Mute enabled: you will no longer receive messages from %s.\nSend \"/unmute %s\" to turn the mute off.",
 	'cmd_unmuted' =>          "Mute disabled: you will now receive messages from %s.",
 	'cmd_about' =>            "There are %d people in the chat. You can read the archives at:\n%s",
+	'cmd_invite_hello' =>     "Hello! Someone with the name %s (%s) has invited you to an SMS chat.\nReply \"ok\" to join. (Or just ignore this.)",
+	'cmd_invite_sent' =>      "Your invitation has been sent!",
 	'err_command_unknown' =>  "Hrm, I don't know the \"/%s\" command",
 	'err_command_no_help' =>  "There is a \"/%s\" command, but it doesn't have any help info.",
 	'err_command_empty_tx' => "Welp, we received your \"/%s\" command, but could not come up with anything useful to send you back.\nSo, instead you are seeing this. :shrug:",
@@ -37,7 +40,7 @@ $xo_templates = array(
 	'err_cannot_mute_self' => "Uhh, sorry you cannot mute yourself!",
 	'err_invalid_phone' =>    "Hmm. That phone number doesn't look valid.",
 	'err_login_invalid' =>    "Sorry, that login code didn't work. Try again?",
-	'err_login_expired' =>    "Oops, that login code has expired. try again?"
+	'err_login_expired' =>    "Oops, that login code has expired. Try again?"
 );
 
 function xo() {

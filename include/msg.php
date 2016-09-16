@@ -312,7 +312,7 @@ function msg_is_command($msg) {
 		echo "cmd: $cmd\n";
 	}
 
-	if (preg_match('/^\s*([a-z]+)\s*(\S*)$/', $cmd, $matches)) {
+	if (preg_match('/^\s*([a-z]+)\s*(.*)$/', $cmd, $matches)) {
 		return array(
 			'id' => $matches[1],
 			'args' => $matches[2]

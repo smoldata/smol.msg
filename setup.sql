@@ -33,6 +33,7 @@ CREATE TABLE `usr` (
   `joined` datetime DEFAULT NULL,
   `active` datetime DEFAULT NULL,
   `web_active` datetime DEFAULT NULL,
+  `invited_by` int(11) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `phone` (`phone`),
   UNIQUE KEY `name` (`name`)

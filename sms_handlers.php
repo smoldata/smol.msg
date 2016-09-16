@@ -53,9 +53,16 @@ function sms_invited($usr_id, $rx_msg, $rx_id) {
 	// 'invited' is the status a user gets assigned when their friend sends
 	// an "/invite [phone]" command.
 
-	// Transition to name context.
-	usr_set_context($usr_id, 'name');
-	msg_tx($usr_id, $rx_id, xo('ctx_intro'), "send now");
+	$msg = strtolower($rx_msg);
+	$msg = trim($msg);
+
+	if (mb_substr($msg, 0, 2) == 'ok') {
+		// Great, transition to name context.
+		usr_set_context($usr_id, 'name');
+		msg_tx($usr_id, xo('ctx_intro'), $rx_id, "send now");
+	} else {
+		msg_tx($usr_id, xo('ctx_invite_sorry'), $rx_id, "send now");
+	}
 
 	// TODO: inform person who invited
 }
@@ -65,20 +72,38 @@ function sms_name($usr_id, $rx_msg, $rx_id) {
 	// 'name' context is when we're prompting the user for theif first
 	// username.
 
+	include(__DIR__ . '/config.php');
+
 	$rsp = usr_set_name($usr_id, $rx_msg, $rx_id);
 	if ($rsp['ok']) {
+
 		$name = $rsp['name'];
-		usr_set_context($usr_id, 'first_msg');
-		$rsp = usr_get_first_msg($usr_id, 'formatted');
+
+		$rsp = usr_get_by_id($usr_id);
 		util_ensure_rsp($rsp);
-		$first_msg = $rsp['first_msg'];
-		$tx_msg = xo('ctx_name', $name, $first_msg);
-		msg_tx($usr_id, $tx_msg, $rx_id, "send now");
+		$usr = $rsp['usr'];
+
+		if (! empty($usr->invited_by)) {
+			// If the user was *invited*, just jump into the chat.
+			usr_set_context($usr_id, 'chat');
+			$count = xo_chat_count($usr_id);
+			$tx_msg = xo('ctx_first_msg', $count, $website_url);
+		} else {
+			// Ask to send out the first message.
+			usr_set_context($usr_id, 'first_msg');
+			$rsp = usr_get_first_msg($usr_id, 'formatted');
+			util_ensure_rsp($rsp);
+			$first_msg = $rsp['first_msg'];
+			$tx_msg = xo('ctx_name', $name, $first_msg);
+		}
+
 	} else {
+		// Invalid name
 		$tx_msg = xo($rsp['xo']);
 		$tx_msg .= "\nPlease try again.";
-		msg_tx($usr_id, $tx_msg, $rx_id, "send now");
 	}
+
+	msg_tx($usr_id, $tx_msg, $rx_id, "send now");
 }
 
 function sms_first_msg($usr_id, $rx_msg, $rx_id) {
@@ -135,7 +160,7 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 	}
 
 	// Send the response message
-	$tx_msg = xo('ctx_first_msg', $sent, $count, $website_url);
+	$tx_msg = xo('ctx_first_msg', "$sent $count", $website_url);
 	msg_tx($usr_id, $tx_msg, $rx_id, "send now");
 
 	// Transition into chat
