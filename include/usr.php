@@ -117,6 +117,13 @@ function usr_set_name($usr_id, $name, $rx_id) {
 	$name = trim($name);
 	$usr_id = intval($usr_id);
 
+	if (empty($name)) {
+		return array(
+			'ok' => 0,
+			'xo' => 'err_name_empty'
+		);
+	}
+
 	if (! preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
 		return array(
 			'ok' => 0,
@@ -129,29 +136,33 @@ function usr_set_name($usr_id, $name, $rx_id) {
 
 	$existing = $rsp['usr'];
 
-	if (! empty($existing) &&
-	    $existing->id != $usr->id) {
-		return array(
-			'ok' => 0,
-			'xo' => 'err_name_exists'
-		);
+	if (! empty($existing)) {
+		if ($existing->id == $usr_id) {
+			return array(
+				'ok' => 0,
+				'xo' => 'err_name_unchanged'
+			);
+		} else {
+			return array(
+				'ok' => 0,
+				'xo' => 'err_name_exists'
+			);
+		}
 	}
+
+	$rsp = usr_get_by_id($usr_id);
+	util_ensure_rsp($rsp);
+	$usr = $rsp['usr'];
 
 	$rsp = db_update('usr', array(
 		'name' => $name
 	), "id = $usr_id");
 	util_ensure_rsp($rsp);
 
-	$rsp = usr_get_by_id($usr_id);
-	util_ensure_rsp($rsp);
-
-	$usr = $rsp['usr'];
-	$rsp = msg_admin_tx($usr_id, "[$usr->name is now known as $name]", $rx_id);
-	util_ensure_rsp($rsp);
-
 	return array(
 		'ok' => 1,
-		'name' => $name
+		'new_name' => $name,
+		'old_name' => $usr->name
 	);
 }
 

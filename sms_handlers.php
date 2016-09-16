@@ -88,6 +88,10 @@ function sms_name($usr_id, $rx_msg, $rx_id) {
 			usr_set_context($usr_id, 'chat');
 			$count = xo_chat_count($usr_id);
 			$tx_msg = xo('ctx_first_msg', $count, $website_url);
+
+			// Announce that the user has joined the chat
+			$announcement = xo('cmd_start_announce', $usr->name);
+			msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 		} else {
 			// Ask to send out the first message.
 			usr_set_context($usr_id, 'first_msg');
@@ -119,6 +123,18 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 	// Reply /stop to leave, or /help for more commands...
 
 	include(__DIR__ . '/config.php');
+
+	$usr = usr_get($usr_id);
+	if (! $usr) {
+		return;
+	}
+
+	// Transition into chat
+	usr_set_context($usr_id, 'chat');
+
+	// Announce that the user has joined the chat
+	$announcement = xo('cmd_start_announce', $usr->name);
+	msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 
 	// First, figure out $count: how many people are in the chat?
 
@@ -162,9 +178,6 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 	// Send the response message
 	$tx_msg = xo('ctx_first_msg', "$sent $count", $website_url);
 	msg_tx($usr_id, $tx_msg, $rx_id, "send now");
-
-	// Transition into chat
-	usr_set_context($usr_id, 'chat');
 }
 
 function sms_stopped($usr_id, $rx_msg, $rx_id) {

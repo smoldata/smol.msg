@@ -42,7 +42,7 @@ function sms_command_help($usr_id, $cmd) {
 	}
 }
 
-function sms_command_stop($usr_id) {
+function sms_command_stop($usr_id, $args = null, $rx_id = null) {
 
 	// Staaaahp, no more chat messages: /stop
 
@@ -50,11 +50,18 @@ function sms_command_stop($usr_id) {
 	// passed along. Which is sort of why command syntax uses a slash
 	// prefix, beyond existing chat conventions.
 
-	usr_set_context($usr_id, 'stopped');
-	return xo('cmd_stop');
+	$usr = usr_get("id$usr_id");
+	if ($usr) {
+		usr_set_context($usr_id, 'stopped');
+		$announcement = xo('cmd_stop_announce', $usr->name);
+		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+		return xo('cmd_stop');
+	} else {
+		return xo('err_command_unknown');
+	}
 }
 
-function sms_command_start($usr_id) {
+function sms_command_start($usr_id, $args = null, $rx_id = null) {
 
 	// Rejoin the chat: /start
 
@@ -68,28 +75,35 @@ function sms_command_start($usr_id) {
 	} else {
 		usr_set_context($usr_id, 'chat');
 		$count = xo_chat_count($usr_id);
+		$announcement = xo('cmd_start_announce', $usr->name);
+		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_start', $count);
 	}
 }
 
-function sms_command_name($usr_id, $new_name, $rx_id) {
+function sms_command_name($usr_id, $new_name = null, $rx_id = null) {
 
 	// Change your name: /name [new name]
 
 	$rsp = usr_set_name($usr_id, $new_name, $rx_id);
 	if ($rsp['ok']) {
-		return xo('cmd_name_changed', $new_name);
+		$announcement = xo('cmd_name_announce', $rsp['old_name'], $rsp['new_name']);
+		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+		return xo('cmd_name_changed', $rsp['new_name']);
 	} else {
 		return xo($rsp['xo']);
 	}
 }
 
-function sms_command_mute($usr_id, $mute_name = null) {
+function sms_command_mute($usr_id, $mute_name = null, $rx_id = null) {
 
 	// Stop getting messages from a particular user: /mute [name]
 
 	$rsp = usr_set_mute($usr_id, $mute_name, true);
 	if ($rsp['ok']) {
+		$usr = usr_get($usr_id);
+		$announcement = xo('cmd_mute_announce', $usr->name, $mute_name);
+		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_muted', $mute_name, $mute_name);
 	} else {
 		return xo($rsp['xo']);
@@ -102,6 +116,9 @@ function sms_command_unmute($usr_id, $mute_name = null) {
 
 	$rsp = usr_set_mute($usr_id, $mute_name, false);
 	if ($rsp['ok']) {
+		$usr = usr_get($usr_id);
+		$announcement = xo('cmd_unmute_announce', $usr->name, $mute_name);
+		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_unmuted', $mute_name);
 	} else {
 		return xo($rsp['xo']);
@@ -152,7 +169,7 @@ function sms_command_login($usr_id, $login_code) {
 	}
 }
 
-function sms_command_hold($usr_id, $msg_id) {
+function sms_command_hold($usr_id, $msg_id, $rx_id) {
 
 	// TODO: write this /hold [msg id]
 }
