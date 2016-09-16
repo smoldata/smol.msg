@@ -2,6 +2,25 @@
 
 define('USR_LOGIN_TTL', 15 * 60 * 60);
 
+function usr_get($who) {
+
+	// This is a shortcut to either usr_get_by_id or usr_get_by_name.
+	// Instead of returning a $rsp, this will return a usr object or null.
+
+	if (substr($who, 0, 2) == 'id') {
+		$id = substr($who, 2);
+		$id = intval($id);
+		$rsp = usr_get_by_id($id);
+	} else {
+		$rsp = usr_get_by_name($who);
+	}
+	if (! empty($rsp['usr'])) {
+		return $rsp['usr'];
+	} else {
+		return null;
+	}
+}
+
 function usr_get_by_phone($phone) {
 
 	// Of the usr_get_by_* functions, this one is different in that it will
@@ -179,11 +198,26 @@ function usr_get_first_msg($usr_id, $formatted = false) {
 	);
 }
 
-function usr_set_status($usr_id, $status) {
-	$usr_id = intval($usr_id);
-	return db_update('usr', array(
+function usr_set_status($who, $status) {
+
+	$usr = usr_get($who);
+	if (! $usr) {
+		return array(
+			'ok' => 0,
+			'xo' => xo('err_user_not_found')
+		);
+	}
+	$usr_id = intval($usr->id);
+
+	$rsp = db_update('usr', array(
 		'status' => $status
 	), "id = $usr_id");
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+
+	$rsp['name'] = $usr->name;
+	return $rsp;
 }
 
 function usr_set_ban($usr, $ban_active = true) {
@@ -195,7 +229,16 @@ function usr_set_ban($usr, $ban_active = true) {
 	return OK;
 }
 
-function usr_is_admin($usr) {
+function usr_is_admin($usr_id) {
+
+	$usr = usr_get("id$usr_id");
+	if (! $usr) {
+		if (DEBUG) {
+			echo "Unknown user $usr_id!\n";
+		}
+		return false;
+	}
+
 	return ($usr->status == 'admin');
 }
 

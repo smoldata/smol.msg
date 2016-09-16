@@ -157,14 +157,40 @@ function sms_command_hold($usr_id, $msg_id) {
 	// TODO: write this /hold [msg id]
 }
 
-function sms_command_ban($usr_id, $user) {
+function sms_command_ban($usr_id, $who, $rx_id) {
 
-	// TODO: write this /ban [user]
+	// Teh BAN HAMMER (admin users only)
+
+	if (! usr_is_admin($usr_id)) {
+		return xo('err_command_unknown');
+	}
+
+	$rsp = usr_set_status($who, 'banned');
+	if ($rsp['ok']) {
+		$tx_msg = xo('cmd_banned', $rsp['name']);
+		msg_admin_tx($usr_id, "[$tx_msg]", $rx_id);
+		return $tx_msg;
+	} else {
+		return xo($rsp['xo']);
+	}
 }
 
-function sms_command_unban($usr_id, $user) {
+function sms_command_unban($usr_id, $who, $rx_id) {
 
-	// TODO: write this /unban [user]
+	// Unban a user (admin users only)
+
+	if (! usr_is_admin($usr_id)) {
+		return xo('err_command_unknown');
+	}
+
+	$rsp = usr_set_status($who, 'user');
+	if ($rsp['ok']) {
+		$tx_msg = xo('cmd_unbanned', $rsp['name']);
+		msg_admin_tx($usr_id, "[$tx_msg]", $rx_id);
+		return $tx_msg;
+	} else {
+		return xo($rsp['xo']);
+	}
 }
 
 function sms_command_unknown($usr_id) {
