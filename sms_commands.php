@@ -193,6 +193,42 @@ function sms_command_unban($usr_id, $who, $rx_id) {
 	}
 }
 
+function sms_command_admin($usr_id, $who, $rx_id) {
+
+	// Make another user an admin (admin users only)
+
+	if (! usr_is_admin($usr_id)) {
+		return xo('err_command_unknown');
+	}
+
+	$rsp = usr_set_status($who, 'admin');
+	if ($rsp['ok']) {
+		$tx_msg = xo('cmd_admin', $rsp['name']);
+		msg_admin_tx($usr_id, "[$tx_msg]", $rx_id);
+		return $tx_msg;
+	} else {
+		return xo($rsp['xo']);
+	}
+}
+
+function sms_command_mod($usr_id, $who, $rx_id) {
+
+	// Make another user a moderator (admin users only)
+
+	if (! usr_is_admin($usr_id)) {
+		return xo('err_command_unknown');
+	}
+
+	$rsp = usr_set_status($who, 'mod');
+	if ($rsp['ok']) {
+		$tx_msg = xo('cmd_mod', $rsp['name']);
+		msg_admin_tx($usr_id, "[$tx_msg]", $rx_id);
+		return $tx_msg;
+	} else {
+		return xo($rsp['xo']);
+	}
+}
+
 function sms_command_unknown($usr_id) {
 	return xo('err_command_unknown');
 }
