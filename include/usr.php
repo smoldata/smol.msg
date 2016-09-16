@@ -208,7 +208,8 @@ function usr_is_first() {
 	return ($rsp['value'] == 0);
 }
 
-function usr_set_mute($usr, $name, $mute) {
+function usr_set_mute($usr_id, $name, $mute) {
+
 	$rsp = usr_get_by_name($name);
 	if (empty($rsp['usr'])) {
 		return array(
@@ -217,8 +218,10 @@ function usr_set_mute($usr, $name, $mute) {
 		);
 	}
 	$mute_usr = $rsp['usr'];
+	$mute_usr_id = intval($mute_usr->id);
+	$usr_id = intval($usr_id);
 
-	if ($mute_usr->id == $usr->id) {
+	if ($mute_usr_id == $usr_id) {
 		return array(
 			'ok' => 0,
 			'xo' => 'err_cannot_mute_self'
@@ -231,8 +234,8 @@ function usr_set_mute($usr, $name, $mute) {
 		WHERE usr_id = ?
 		  AND muted_id = ?
 	", array(
-		$usr->id,
-		$mute_usr->id
+		$usr_id,
+		$mute_usr_id
 	));
 	$exists = $rsp['row'];
 
@@ -240,13 +243,13 @@ function usr_set_mute($usr, $name, $mute) {
 		if (empty($exists)) {
 			$created = date('Y-m-d H:i:s');
 			return db_insert('usr_mute', array(
-				'usr_id' => $usr->id,
-				'muted_id' => $mute_usr->id,
+				'usr_id' => $usr_id,
+				'muted_id' => $mute_usr_id,
 				'created' => $created
 			));
 		} else {
 			$created = date('Y-m-d H:i:s');
-			$where = "usr_id = $usr->id AND muted_id = $mute_usr->id";
+			$where = "usr_id = $usr_id AND muted_id = $mute_usr_id";
 			return db_update('usr_mute', array(
 				'active' => 1,
 				'created' => $created
@@ -255,7 +258,7 @@ function usr_set_mute($usr, $name, $mute) {
 	} else {
 		if (! empty($exists)) {
 			$deleted = date('Y-m-d H:i:s');
-			$where = "usr_id = $usr->id AND muted_id = $mute_usr->id";
+			$where = "usr_id = $usr_id AND muted_id = $mute_usr_id";
 			return db_update('usr_mute', array(
 				'active' => 0,
 				'deleted' => $deleted
@@ -336,13 +339,13 @@ function usr_get_count() {
 function usr_check_if_muted($tx) {
 	global $usr_mutes;
 	if (empty($usr_mutes)) {
-		$usr_mutes = array();
-		$db = db_setup();
-		$query = $db->query("
+		$rsp = db_fetch("
 			SELECT *
 			FROM usr_mute
+			WHERE active = 1
 		");
-		while ($mute = $query->fetchObject()) {
+		$usr_mutes = array();
+		foreach ($rsp['rows'] as $mute) {
 			if (empty($usr_mutes[$mute->usr_id])) {
 				$usr_mutes[$mute->usr_id] = array();
 			}

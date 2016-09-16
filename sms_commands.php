@@ -100,11 +100,11 @@ function sms_command_unmute($usr_id, $mute_name = null) {
 
 	// Start getting messages from a particular user: /unmute [name]
 
-	$rsp = usr_set_mute($usr, $mute_name, false);
-	if ($rsp == OK) {
+	$rsp = usr_set_mute($usr_id, $mute_name, false);
+	if ($rsp['ok']) {
 		return xo('cmd_unmuted', $mute_name);
 	} else {
-		return xo($rsp);
+		return xo($rsp['xo']);
 	}
 }
 
