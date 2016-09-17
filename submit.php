@@ -8,12 +8,6 @@ $rsp = array(
 	'error' => 'Hmm. Something strange and unexpected happened.'
 );
 
-if (! empty($_POST['msg']) &&
-    ! empty($_SESSION['usr_id'])) {
-	$rsp = msg_web_submission($_SESSION['usr_id'], $_POST['msg']);
-}
 
-header('Content-Type: application/json');
-echo json_encode($rsp);
 
 ?>

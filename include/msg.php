@@ -40,6 +40,9 @@ function msg_tx($usr_id, $tx_msg, $rx_id, $send_now = false) {
 
 	$tx_id = $rsp['insert_id'];
 	if (! empty($send_now)) {
+		if (DEBUG) {
+			echo "Sending now!\n";
+		}
 		$tx_batch = util_uuid();
 		db_update('tx', array(
 			'transmit_batch' => $tx_batch
@@ -79,6 +82,36 @@ function msg_admin_tx($usr_id, $msg, $rx_id) {
 		);
 	}
 	return db_insert_bulk('tx', $bulk_values);
+}
+
+function msg_router($usr_id, $rx_msg) {
+	$rsp = usr_get_by_id($usr_id);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	$usr = $rsp['usr'];
+	$usr_context = $usr->context;
+
+	$rsp = msg_rx($usr_id, $rx_msg);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	$rx_id = $rsp['insert_id'];
+
+	$cmd = msg_is_command($rx_msg);
+
+	if ($cmd) {
+		// User is trying to issue a command
+		// See: sms_commands.php
+		$rsp = sms_command($usr_id, $rx_msg, $rx_id, $cmd);
+	} else {
+		// Not a command, proceed according to the $usr_context
+		// See: sms_handlers.php
+		$rsp = sms_handler($usr_id, $rx_msg, $rx_id, $usr_context);
+	}
+
+	$rsp['rx_id'] = $rx_id;
+	return $rsp;
 }
 
 function msg_send_pending() {
@@ -418,31 +451,4 @@ function msg_add_to_channel($rx_id, $usr_id, $msg) {
 		$created
 	));
 	return $db->lastInsertId();
-}
-
-function msg_web_submission($usr_id, $rx_msg) {
-	$rsp = usr_get_by_id($usr_id);
-	if (! $rsp['ok']) {
-		return $rsp;
-	}
-	$usr = $rsp['usr'];
-	$usr_context = $usr->context;
-
-	$rsp = msg_rx($usr_id, $rx_msg);
-	if (! $rsp['ok']) {
-		return $rsp;
-	}
-	$rx_id = $rsp['insert_id'];
-
-	$cmd = msg_is_command($rx_msg);
-
-	if ($cmd) {
-		// User is trying to issue a command
-		// See: sms_commands.php
-		return sms_command($usr_id, $rx_msg, $rx_id, $cmd, 'web');
-	} else {
-		// Not a command, proceed according to the $usr_context
-		// See: sms_handlers.php
-		return sms_handler($usr_id, $rx_msg, $rx_id, $usr_context, 'web');
-	}
 }

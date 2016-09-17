@@ -24,34 +24,19 @@ if (! $rsp['ok']) {
 }
 $usr = $rsp['usr'];
 $usr_id = $usr->id;
-$usr_context = $usr->context;
-
 $rx_msg = $_POST['Body'];
 
-// Record the incoming message in the rx database table.
-$rsp = msg_rx($usr_id, $rx_msg);
+$rsp = msg_router($usr_id, $rx_msg);
 if (! $rsp['ok']) {
-	echo "Error: could not rx {$rx_msg} from usr {$usr_id}\n";
-	print_r($rsp);
+	if (DEBUG) {
+		print_r($rsp);
+	}
 	exit;
 }
-$rx_id = $rsp['insert_id'];
 
-// Now we know who sent the message ($usr_id) and have made a record of its
-// receipt ($rx_id). Next we will:
-//   1. Check to see if the message matches known commands (e.g., "/stop")
-//   2. Proceed with a handler function, according to the user's context
-
-$cmd = msg_is_command($rx_msg);
-
-if ($cmd) {
-	// User is trying to issue a command
-	// See: sms_commands.php
-	sms_command($usr_id, $rx_msg, $rx_id, $cmd);
-} else {
-	// Not a command, proceed according to the $usr_context
-	// See: sms_handlers.php
-	sms_handler($usr_id, $rx_msg, $rx_id, $usr_context);
+if (! empty($rsp['tx_msg'])) {
+	// Send a message, if there's a response to send
+	msg_tx($usr_id, $rsp['tx_msg'], $rsp['rx_id'], "send now");
 }
 
 // Update the user's active time

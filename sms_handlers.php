@@ -1,6 +1,6 @@
 <?php
 
-function sms_handler($usr_id, $rx_msg, $rx_id, $usr_context, $via_service = 'twilio') {
+function sms_handler($usr_id, $rx_msg, $rx_id, $usr_context) {
 
 	// Based on the user context, invoke a handler function.
 
@@ -15,7 +15,7 @@ function sms_handler($usr_id, $rx_msg, $rx_id, $usr_context, $via_service = 'twi
 	}
 
 	if (function_exists($handler_func)) {
-		$tx_msg = call_user_func($handler_func, $usr_id, $rx_msg, $rx_id);
+		$rsp = call_user_func($handler_func, $usr_id, $rx_msg, $rx_id);
 	} else {
 		return array(
 			'ok' => 0,
@@ -23,14 +23,7 @@ function sms_handler($usr_id, $rx_msg, $rx_id, $usr_context, $via_service = 'twi
 		);
 	}
 
-	if ($via_service == 'twilio') {
-		return msg_tx($usr_id, $tx_msg, $rx_id, "send now");
-	} else {
-		return array(
-			'ok' => 1,
-			'msg' => $tx_msg
-		);
-	}
+	return $rsp;
 }
 
 function sms_intro($usr_id, $rx_msg, $rx_id) {
@@ -57,7 +50,12 @@ function sms_intro($usr_id, $rx_msg, $rx_id) {
 
 	// Transition to name context.
 	usr_set_context($usr_id, 'name');
-	return xo('ctx_intro');
+	$tx_msg = xo('ctx_intro');
+
+	return array(
+		'ok' => 1,
+		'tx_msg' => $tx_msg
+	);
 }
 
 function sms_invited($usr_id, $rx_msg, $rx_id) {
@@ -71,12 +69,17 @@ function sms_invited($usr_id, $rx_msg, $rx_id) {
 	if (mb_substr($msg, 0, 2) == 'ok') {
 		// Great, transition to name context.
 		usr_set_context($usr_id, 'name');
-		return xo('ctx_intro');
+		$tx_msg = xo('ctx_intro');
 	} else {
-		return xo('ctx_invite_sorry');
+		$tx_msg = xo('ctx_invite_sorry');
 	}
 
 	// TODO: inform person who invited
+
+	return array(
+		'ok' => 1,
+		'tx_msg' => $tx_msg
+	);
 }
 
 function sms_name($usr_id, $rx_msg, $rx_id) {
@@ -135,7 +138,10 @@ function sms_name($usr_id, $rx_msg, $rx_id) {
 		$tx_msg .= "\nPlease try again.";
 	}
 
-	return $tx_msg;
+	return array(
+		'ok' => 1,
+		'tx_msg' => $tx_msg
+	);
 }
 
 function sms_first_msg($usr_id, $rx_msg, $rx_id) {
@@ -154,44 +160,28 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 
 	$usr = usr_get("id$usr_id");
 	if (! $usr) {
-		if (DEBUG) {
-			echo "Couldn't find user $usr_id!\n";
-		}
-		return;
+		return array(
+			'ok' => 0,
+			'error' => "Couldn't find user $usr_id!\n"
+		);
 	}
 
 	// Transition into chat
 	usr_set_context($usr_id, 'chat');
-	
-	if (DEBUG) {
-		echo "set context to chat\n";
-	}
 
 	// Announce that the user has joined the chat
 	$announcement = xo('cmd_start_announce', $usr->name);
 	msg_admin_tx($usr_id, "[$announcement]", $rx_id);
-	
-	if (DEBUG) {
-		echo "sent announcement\n";
-	}
 
 	// First, figure out $count: how many people are in the chat?
 
 	$count = xo_chat_count($usr_id);
-	
-	if (DEBUG) {
-		echo "count: $count\n";
-	}
 
 	// Next: send or not send the message? Result is stored in $sent.
 
 	$yes_no = strtolower($rx_msg);
 	$yes_no = trim($yes_no);
 	$yes_no = mb_substr($yes_no, 0, 1);
-	
-	if (DEBUG) {
-		echo "yes_no: $yes_no\n";
-	}
 
 	if ($yes_no == 'y') {
 
@@ -215,7 +205,10 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 			msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 
 			$tx_msg = xo_first_msg_held($usr_id);
-			return $tx_msg;
+			return array(
+				'ok' => 1,
+				'tx_msg' => $tx_msg
+			);
 		}
 
 		// This is the part where we actually send the message: *whoosh*
@@ -235,17 +228,10 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 		// Huh? "Didn't send."
 		$sent = xo('ctx_first_msg_huh');
 	}
-	if (DEBUG) {
-		echo "sent: $sent\n";
-	}
 	
 	
 	// Send the response message
 	$tx_msg = xo('ctx_first_msg', "$sent $count", $website_url);
-	
-	if (DEBUG) {
-		echo "$tx_msg\n";
-	}
 
 	// Is this the first user? If so, make 'em the admin.
 	if (usr_is_first()) {
@@ -259,7 +245,10 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 		}
 	}
 
-	return $tx_msg;
+	return array(
+		'ok' => 1,
+		'tx_msg' => $tx_msg
+	);
 }
 
 function sms_stopped($usr_id, $rx_msg, $rx_id) {
@@ -267,8 +256,9 @@ function sms_stopped($usr_id, $rx_msg, $rx_id) {
 	// 'stopped' is when the user has left the chat with the "/stop"
 	// command. We will send their message and transition to 'chat' context.
 
-	msg_tx($usr_id, xo('ctx_stopped'), $rx_id, "send now");
-	return msg_chat($usr_id, $rx_msg, $rx_id);
+	$rsp = msg_chat($usr_id, $rx_msg, $rx_id);
+	$rsp['tx_msg'] = xo('ctx_stopped');
+	return $rsp;
 }
 
 function sms_chat($usr_id, $rx_msg, $rx_id) {

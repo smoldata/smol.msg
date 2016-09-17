@@ -16,14 +16,10 @@ function sms_command($usr_id, $rx_msg, $rx_id, $cmd, $via_service = 'twilio') {
 		$tx_msg = xo('err_command_empty_tx');
 	}
 
-	if ($via_service == 'twilio') {
-		msg_tx($usr_id, $tx_msg, $rx_id, "send now");
-	} else {
-		return array(
-			'ok' => 1,
-			'msg' => $tx_msg
-		);
-	}
+	return array(
+		'ok' => 1,
+		'msg' => $tx_msg
+	);
 }
 
 function sms_command_help($usr_id, $cmd) {
