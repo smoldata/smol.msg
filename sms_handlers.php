@@ -36,12 +36,6 @@ function sms_intro($usr_id, $rx_msg, $rx_id) {
 
 	$usr = $rsp['usr'];
 
-	// Is this the first user? If so, make 'em the admin.
-	if (usr_is_first()) {
-		usr_set_status($usr_id, 'admin');
-		msg_tx($usr_id, xo('ctx_intro_admin'), $rx_id);
-	}
-
 	// Send the first incoming message out to admins for
 	// moderation.
 	$admin_options = "[/hold {$rx_id} /ban $usr->name]";
@@ -83,7 +77,7 @@ function sms_name($usr_id, $rx_msg, $rx_id) {
 	$rsp = usr_set_name($usr_id, $rx_msg, $rx_id);
 	if ($rsp['ok']) {
 
-		$name = $rsp['name'];
+		$name = $rsp['new_name'];
 
 		$rsp = usr_get_by_id($usr_id);
 		util_ensure_rsp($rsp);
@@ -146,27 +140,46 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 
 	include(__DIR__ . '/config.php');
 
-	$usr = usr_get($usr_id);
+	$usr = usr_get("id$usr_id");
 	if (! $usr) {
+		if (DEBUG) {
+			echo "Couldn't find user $usr_id!\n";
+		}
 		return;
 	}
 
 	// Transition into chat
 	usr_set_context($usr_id, 'chat');
+	
+	if (DEBUG) {
+		echo "set context to chat\n";
+	}
 
 	// Announce that the user has joined the chat
 	$announcement = xo('cmd_start_announce', $usr->name);
 	msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+	
+	if (DEBUG) {
+		echo "sent announcement\n";
+	}
 
 	// First, figure out $count: how many people are in the chat?
 
 	$count = xo_chat_count($usr_id);
+	
+	if (DEBUG) {
+		echo "count: $count\n";
+	}
 
 	// Next: send or not send the message? Result is stored in $sent.
 
 	$yes_no = strtolower($rx_msg);
 	$yes_no = trim($yes_no);
 	$yes_no = mb_substr($yes_no, 0, 1);
+	
+	if (DEBUG) {
+		echo "yes_no: $yes_no\n";
+	}
 
 	if ($yes_no == 'y') {
 
@@ -211,10 +224,25 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 		// Huh? "Didn't send."
 		$sent = xo('ctx_first_msg_huh');
 	}
-
+	if (DEBUG) {
+		echo "sent: $sent\n";
+	}
+	
+	
 	// Send the response message
 	$tx_msg = xo('ctx_first_msg', "$sent $count", $website_url);
+	
+	if (DEBUG) {
+		echo "$tx_msg\n";
+	}
+	
 	msg_tx($usr_id, $tx_msg, $rx_id, "send now");
+	
+	// Is this the first user? If so, make 'em the admin.
+	if (usr_is_first()) {
+		usr_set_status($usr_id, 'admin');
+		msg_tx($usr_id, xo('ctx_intro_admin'), $rx_id);
+	}
 }
 
 function sms_stopped($usr_id, $rx_msg, $rx_id) {

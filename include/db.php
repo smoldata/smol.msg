@@ -168,6 +168,20 @@ function db_query($sql, $values = null) {
 		$query = $db->query($sql);
 	} else {
 		$query = $db->prepare($sql);
+	}
+
+	if (! $query) {
+		$error = $db->errorInfo();
+		$error = implode(' ', $error);
+		return array(
+			'ok' => 0,
+			'error' => $error,
+			'sql' => $sql,
+			'values' => $values
+		);
+	}
+
+	if (! empty($values)) {
 		$query->execute($values);
 	}
 

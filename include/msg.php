@@ -83,10 +83,6 @@ function msg_admin_tx($usr_id, $msg, $rx_id) {
 
 function msg_send_pending() {
 
-	if (DEBUG) {
-		exit;
-	}
-
 	$db = db_setup();
 	$tx_batch = util_uuid();
 

@@ -101,7 +101,7 @@ function sms_command_mute($usr_id, $mute_name = null, $rx_id = null) {
 
 	$rsp = usr_set_mute($usr_id, $mute_name, true);
 	if ($rsp['ok']) {
-		$usr = usr_get($usr_id);
+		$usr = usr_get("id$usr_id");
 		$announcement = xo('cmd_mute_announce', $usr->name, $mute_name);
 		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_muted', $mute_name, $mute_name);
@@ -116,7 +116,7 @@ function sms_command_unmute($usr_id, $mute_name = null) {
 
 	$rsp = usr_set_mute($usr_id, $mute_name, false);
 	if ($rsp['ok']) {
-		$usr = usr_get($usr_id);
+		$usr = usr_get("id$usr_id");
 		$announcement = xo('cmd_unmute_announce', $usr->name, $mute_name);
 		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_unmuted', $mute_name);
@@ -204,7 +204,7 @@ function sms_command_hold($usr_id, $msg_id, $rx_id) {
 			'held' => $held
 		));
 
-		$usr = usr_get($usr_id);
+		$usr = usr_get("id$usr_id");
 		$announcement = xo('cmd_hold_announce', $usr->name, $msg_id, $msg_id);
 		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 

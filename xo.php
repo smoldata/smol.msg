@@ -3,7 +3,7 @@
 global $xo_templates;
 $xo_templates = array(
 	'ctx_intro' =>            "Welcome!\nPlease reply with the username you'd like to use. It doesn't have to be your actual name, get creative! You can change it later if you want.",
-	'ctx_intro_admin' =>      "Looks like you're the first one here. You get to be the first admin user! The parts [in brackets] are admin-only messages. \"/admin [name]\" to promote someone else.",
+	'ctx_intro_admin' =>      "You're the first one here, so you are the first admin user! The parts [in brackets] are admin-only messages. \"/admin [name]\" to promote someone else.",
 	'ctx_name' =>             "Thanks, %s.\nSend your first message out?\n“%s”\nPlease reply Y or N.",
 	'ctx_first_msg' =>        "%s\nReply /stop to leave, or send /help for more commands. Archives are available at:\n%s",
 	'ctx_first_msg_sent' =>   "Message sent!",
@@ -11,7 +11,7 @@ $xo_templates = array(
 	'ctx_first_msg_drop' =>   "Message NOT sent.",
 	'ctx_first_msg_held' =>   "Your first message was held for moderation.",
 	'ctx_first_msg_huh' =>    "Huh? Message NOT sent.",
-	'ctx_chat_first' =>       "You are the first one in the chat.",
+	'ctx_chat_first' =>       "You are the only one in the chat so far.",
 	'ctx_chat_pair' =>        "You are now chatting with 1 other user.",
 	'ctx_chat_count' =>       "You are now chatting with %d others.",
 	'ctx_stopped' =>          "Hi, welcome back!\nYou will now receive messages again. Reply /stop to leave.",

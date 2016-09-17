@@ -43,7 +43,9 @@ DROP TABLE IF EXISTS `usr_mute`;
 CREATE TABLE `usr_mute` (
   `usr_id` int(11) unsigned NOT NULL,
   `muted_id` int(11) NOT NULL,
+  `active` int(11) DEFAULT '1',
   `created` datetime NOT NULL,
+  `deleted` datetime DEFAULT NULL,
   UNIQUE KEY `usr_id` (`usr_id`,`muted_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

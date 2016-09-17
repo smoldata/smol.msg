@@ -391,6 +391,10 @@ function usr_check_if_muted($tx) {
 			FROM usr_mute
 			WHERE active = 1
 		");
+		if (! $rsp['ok']) {
+			return $rsp;
+		}
+
 		$usr_mutes = array();
 		foreach ($rsp['rows'] as $mute) {
 			if (empty($usr_mutes[$mute->usr_id])) {
