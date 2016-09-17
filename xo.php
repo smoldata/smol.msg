@@ -3,7 +3,7 @@
 global $xo_templates;
 $xo_templates = array(
 	'ctx_intro' =>            "Welcome!\nPlease reply with the username you'd like to use. It doesn't have to be your actual name, get creative! You can change it later if you want.",
-	'ctx_intro_admin' =>      "You're the first one here, so you are the first admin user! The parts [in brackets] are admin-only messages. \"/admin [name]\" to promote someone else.",
+	'ctx_intro_admin' =>      "You are the first admin user! Parts [in brackets] are admin-only messages. Use \"/admin [name]\" to promote someone else.",
 	'ctx_name' =>             "Thanks, %s.\nSend your first message out?\n“%s”\nPlease reply Y or N.",
 	'ctx_first_msg' =>        "%s\nReply /stop to leave, or send /help for more commands. Archives are available at:\n%s",
 	'ctx_first_msg_sent' =>   "Message sent!",
@@ -45,6 +45,7 @@ $xo_templates = array(
 	'cmd_hold_created' =>     "Message %d has been held.\n Use \"/approve %d\" to send it.",
 	'cmd_hold_exists' =>      "Someone beat you to it. Message %d is already held.\nUse \"/approve %d\" to send it.",
 	'cmd_hold_announce' =>    "User %s has held message %d.\nUse \"/approve %d\" to send it.",
+	'cmd_login_success' =>    "You are now logged into %s. You can also post replies via SMS if you'd like.",
 	'err_command_unknown' =>  "Hrm, I don't know the \"/%s\" command",
 	'err_command_no_help' =>  "There is a \"/%s\" command, but it doesn't have any help info.",
 	'err_command_empty_tx' => "Welp, we received your \"/%s\" command, but could not come up with anything useful to send you back.\nSo, instead you are seeing this. :shrug:",

@@ -224,15 +224,6 @@ function usr_set_status($who, $status) {
 	return $rsp;
 }
 
-function usr_set_ban($usr, $ban_active = true) {
-	if ($ban_active) {
-		usr_set_status($usr, 'banned');
-	} else {
-		usr_set_status($usr, 'user');
-	}
-	return OK;
-}
-
 function usr_is_admin($usr_id) {
 
 	$usr = usr_get("id$usr_id");
@@ -532,23 +523,24 @@ function usr_get_login($login_code) {
 }
 
 function usr_complete_login($usr_id, $login_code) {
+
 	$login = usr_get_login($login_code);
 	$ttl_cutoff = time() - USR_LOGIN_TTL;
+
 	if (empty($login)) {
-		return 'err_login_invalid';
+		return array(
+			'ok' => 0,
+			'xo' => 'err_login_invalid'
+		);
 	} else if (strtotime($login->created) < $ttl_cutoff) {
-		return 'err_login_expired';
+		return array(
+			'ok' => 0,
+			'xo' => 'err_login_expired'
+		);
 	}
 
-	$db = db_setup();
-	$query = $db->prepare("
-		UPDATE usr_login
-		SET usr_id = ?
-		WHERE login_code = ?
-	");
-	$query->execute(array(
-		$usr_id,
-		$login_code
-	));
-	return OK;
+	$login_code = addslashes($login_code);
+	return db_update('usr_login', array(
+		'usr_id' => $usr_id
+	), "login_code = '$login_code'");
 }

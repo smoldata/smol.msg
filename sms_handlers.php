@@ -1,6 +1,6 @@
 <?php
 
-function sms_handler($usr_id, $rx_msg, $rx_id, $usr_context) {
+function sms_handler($usr_id, $rx_msg, $rx_id, $usr_context, $via_service = 'twilio') {
 
 	// Based on the user context, invoke a handler function.
 
@@ -15,9 +15,21 @@ function sms_handler($usr_id, $rx_msg, $rx_id, $usr_context) {
 	}
 
 	if (function_exists($handler_func)) {
-		call_user_func($handler_func, $usr_id, $rx_msg, $rx_id);
-	} else if (DEBUG) {
-		echo "No handler function found for '$usr_context' context.\n";
+		$tx_msg = call_user_func($handler_func, $usr_id, $rx_msg, $rx_id);
+	} else {
+		return array(
+			'ok' => 0,
+			'error' => "No handler function found for '$usr_context' context.\n"
+		);
+	}
+
+	if ($via_service == 'twilio') {
+		return msg_tx($usr_id, $tx_msg, $rx_id, "send now");
+	} else {
+		return array(
+			'ok' => 1,
+			'msg' => $tx_msg
+		);
 	}
 }
 
@@ -45,7 +57,7 @@ function sms_intro($usr_id, $rx_msg, $rx_id) {
 
 	// Transition to name context.
 	usr_set_context($usr_id, 'name');
-	msg_tx($usr_id, xo('ctx_intro'), $rx_id, "send now");
+	return xo('ctx_intro');
 }
 
 function sms_invited($usr_id, $rx_msg, $rx_id) {
@@ -59,9 +71,9 @@ function sms_invited($usr_id, $rx_msg, $rx_id) {
 	if (mb_substr($msg, 0, 2) == 'ok') {
 		// Great, transition to name context.
 		usr_set_context($usr_id, 'name');
-		msg_tx($usr_id, xo('ctx_intro'), $rx_id, "send now");
+		return xo('ctx_intro');
 	} else {
-		msg_tx($usr_id, xo('ctx_invite_sorry'), $rx_id, "send now");
+		return xo('ctx_invite_sorry');
 	}
 
 	// TODO: inform person who invited
@@ -123,7 +135,7 @@ function sms_name($usr_id, $rx_msg, $rx_id) {
 		$tx_msg .= "\nPlease try again.";
 	}
 
-	msg_tx($usr_id, $tx_msg, $rx_id, "send now");
+	return $tx_msg;
 }
 
 function sms_first_msg($usr_id, $rx_msg, $rx_id) {
@@ -203,8 +215,7 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 			msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 
 			$tx_msg = xo_first_msg_held($usr_id);
-			msg_tx($usr_id, $tx_msg, $rx_id, "send now");
-			return;
+			return $tx_msg;
 		}
 
 		// This is the part where we actually send the message: *whoosh*
@@ -235,14 +246,20 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 	if (DEBUG) {
 		echo "$tx_msg\n";
 	}
-	
-	msg_tx($usr_id, $tx_msg, $rx_id, "send now");
-	
+
 	// Is this the first user? If so, make 'em the admin.
 	if (usr_is_first()) {
-		usr_set_status($usr_id, 'admin');
-		msg_tx($usr_id, xo('ctx_intro_admin'), $rx_id);
+		// TODO: figure out if this could work better via web service
+		$rsp = usr_set_status("id$usr_id", 'admin');
+		if ($rsp['ok']) {
+			msg_tx($usr_id, xo('ctx_intro_admin'), $rx_id);
+		} else if (DEBUG) {
+			echo "Could not set user status:\n";
+			print_r($rsp);
+		}
 	}
+
+	return $tx_msg;
 }
 
 function sms_stopped($usr_id, $rx_msg, $rx_id) {
@@ -251,12 +268,12 @@ function sms_stopped($usr_id, $rx_msg, $rx_id) {
 	// command. We will send their message and transition to 'chat' context.
 
 	msg_tx($usr_id, xo('ctx_stopped'), $rx_id, "send now");
-	msg_chat($usr_id, $rx_msg, $rx_id);
+	return msg_chat($usr_id, $rx_msg, $rx_id);
 }
 
 function sms_chat($usr_id, $rx_msg, $rx_id) {
 
 	// 'chat' is when the user is sending messages to other users.
 
-	msg_chat($usr_id, $rx_msg, $rx_id);
+	return msg_chat($usr_id, $rx_msg, $rx_id);
 }

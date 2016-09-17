@@ -267,6 +267,8 @@ jQuery(document).ready(function($) {
 				    rsp.id) {
 					// Show the current message
 					displayMessage(rsp);
+				} else {
+					console.log(rsp);
 				}
 
 				$('textarea[name=msg]').removeClass('disabled');

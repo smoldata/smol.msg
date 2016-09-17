@@ -83,8 +83,15 @@ function msg_admin_tx($usr_id, $msg, $rx_id) {
 
 function msg_send_pending() {
 
-	$db = db_setup();
+	if (DEBUG) {
+		echo "msg_send_pending\n";
+	}
+
 	$tx_batch = util_uuid();
+
+	if (DEBUG) {
+		echo "batch: $tx_batch\n";
+	}
 
 	// Delay sending SMS messages to recently-active web users (don't need
 	// to both SMS and show them messages on the website)
@@ -100,6 +107,10 @@ function msg_send_pending() {
 	), $where_clause);
 
 	if (! $rsp['ok']) {
+		if (DEBUG) {
+			echo "Error updating transmit_batch\n";
+			print_r($rsp);
+		}
 		return $rsp;
 	}
 
@@ -207,8 +218,10 @@ function msg_send_sms($tx) {
 	$post_json = json_encode($post);
 	$response = array();
 
-	if (DEBUG) {
-		echo "Would have sent SMS to $tx->phone.\n";
+	if (preg_match('/5551212$/', $tx->phone)) {
+		if (DEBUG) {
+			echo "Would have sent SMS to $tx->phone, but it looks like a test number.\n";
+		}
 		$response = array(
 			'debug' => true
 		);
@@ -260,7 +273,7 @@ function msg_send_sms($tx) {
 	));
 
 	if (DEBUG) {
-		echo "Created tx record:\n";
+		echo "Updated tx record:\n";
 		print_r($tx);
 	}
 
@@ -330,7 +343,11 @@ function msg_chat($usr_id, $rx_msg, $rx_id) {
 		// If the user is banned, just send their message to the admins.
 		$banned_msg = msg_signed_format($usr, "[banned] $rx_msg");
 		msg_admin_tx($usr->id, $banned_msg, $rx_id);
-		return;
+		return array(
+			'ok' => 1,
+			'id' => rand(32, 64),
+			'msg' => $rx_msg
+		);
 	}
 
 	// TODO: don't bake in the username in the channel message.
@@ -345,7 +362,10 @@ function msg_chat($usr_id, $rx_msg, $rx_id) {
 		if (DEBUG) {
 			echo "Chat is empty.\n";
 		}
-		return;
+		return array(
+			'ok' => 1,
+			'msg' => $rx_msg
+		);
 	}
 
 	$signed_msg = msg_signed_format($usr, $rx_msg);
@@ -358,7 +378,11 @@ function msg_chat($usr_id, $rx_msg, $rx_id) {
 		echo "Sent message to " . count($active_usrs) . " active users.\n";
 	}
 
-	return $chat_id;
+	return array(
+		'ok' => 1,
+		'id' => $chat_id,
+		'msg' => $rx_msg
+	);
 }
 
 function msg_body($rx_id) {
@@ -394,4 +418,31 @@ function msg_add_to_channel($rx_id, $usr_id, $msg) {
 		$created
 	));
 	return $db->lastInsertId();
+}
+
+function msg_web_submission($usr_id, $rx_msg) {
+	$rsp = usr_get_by_id($usr_id);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	$usr = $rsp['usr'];
+	$usr_context = $usr->context;
+
+	$rsp = msg_rx($usr_id, $rx_msg);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	$rx_id = $rsp['insert_id'];
+
+	$cmd = msg_is_command($rx_msg);
+
+	if ($cmd) {
+		// User is trying to issue a command
+		// See: sms_commands.php
+		return sms_command($usr_id, $rx_msg, $rx_id, $cmd, 'web');
+	} else {
+		// Not a command, proceed according to the $usr_context
+		// See: sms_handlers.php
+		return sms_handler($usr_id, $rx_msg, $rx_id, $usr_context, 'web');
+	}
 }

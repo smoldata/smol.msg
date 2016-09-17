@@ -1,6 +1,6 @@
 <?php
 
-function sms_command($usr_id, $rx_msg, $rx_id, $cmd) {
+function sms_command($usr_id, $rx_msg, $rx_id, $cmd, $via_service = 'twilio') {
 
 	// Call the command handler function
 	$cmd_func = "sms_command_{$cmd['id']}";
@@ -11,11 +11,18 @@ function sms_command($usr_id, $rx_msg, $rx_id, $cmd) {
 		$tx_msg = sms_command_unknown();
 	}
 
-	// Send the response (there should always be a response)
-	if (! empty($tx_msg)) {
+	// There should always be a response)
+	if (empty($tx_msg)) {
+		$tx_msg = xo('err_command_empty_tx');
+	}
+
+	if ($via_service == 'twilio') {
 		msg_tx($usr_id, $tx_msg, $rx_id, "send now");
 	} else {
-		msg_tx($usr_id, xo('err_command_empty_tx'), $rx_id, "send now");
+		return array(
+			'ok' => 1,
+			'msg' => $tx_msg
+		);
 	}
 }
 
@@ -159,13 +166,11 @@ function sms_command_login($usr_id, $login_code) {
 
 	include(__DIR__ . '/config.php');
 
-
-
 	$rsp = usr_complete_login($usr_id, $login_code);
-	if ($rsp == OK) {
+	if ($rsp['ok']) {
 		return xo('cmd_login_success', $website_url);
 	} else {
-		return xo($rsp);
+		return xo($rsp['xo']);
 	}
 }
 
