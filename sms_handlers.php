@@ -59,6 +59,81 @@ function sms_intro($usr_id, $rx_msg, $rx_id) {
 	);
 }
 
+function sms_send_invite($usr_id, $rx_msg, $rx_id) {
+	
+	// 'send_invite' is the context for when the user just initiated an
+	// /invite [phone] command. The response should be Y, N, or the message
+	// they want to send out as the invitation.
+
+	$rsp = usr_get_last_invite($usr_id);
+	if (! $rsp['ok']) {
+		return array(
+			'ok' => 0,
+			'tx_msg' => xo($rsp['xo'])
+		);
+	}
+	$invite = $rsp['invite'];
+
+	$yes_no = strtolower($rx_msg);
+	$yes_no = trim($yes_no);
+	$yes_no = mb_substr($yes_no, 0, 1);
+	
+	if ($yes_no == 'y') {
+
+		// Send the invitation as-is!
+		$rsp = usr_get_by_phone($invite->phone);
+		$invited = $rsp['usr'];
+		usr_set_context($usr_id, 'chat');
+
+		$rsp = db_update('usr', array(
+			'context' => 'invited',
+			'invited_by' => $usr_id,
+			'joined' => null
+		), "id = $invited->id");
+		if (! $rsp['ok']) {
+			return array(
+				'ok' => 0,
+				'tx_msg' => xo('err_db')
+			);
+		}
+
+		$rsp = db_update('usr_invite', array(
+			'sent' => date('Y-m-d H:i:s')
+		), "id = $invite->id");
+		if (! $rsp['ok']) {
+			return array(
+				'ok' => 0,
+				'tx_msg' => xo('err_db')
+			);
+		}
+
+		// (This is the part where we actually send out the invite.)
+		msg_tx($invited->id, xo('cmd_invite_hello', $invite->invitation), $rx_id);
+
+		return array(
+			'ok' => 1,
+			'tx_msg' => xo('cmd_invite_sent')
+		);
+
+	} else if ($yes_no == 'n') {
+		// Cancel the invitation
+		usr_set_context($usr_id, 'chat');
+		$tx_msg = xo('cmd_invite_cancel');
+	} else {
+		// Update the invitation text
+		db_update('usr_invite', array(
+			'invitation' => $rx_msg
+		), "id = $invite->id");
+
+		// And ask one more time before we send it out.
+		return array(
+			'ok' => 1,
+			'tx_msg' => xo('cmd_invite_preview', $rx_msg)
+		);
+	}
+
+}
+
 function sms_invited($usr_id, $rx_msg, $rx_id) {
 
 	// 'invited' is the status a user gets assigned when their friend sends
@@ -68,14 +143,36 @@ function sms_invited($usr_id, $rx_msg, $rx_id) {
 	$msg = trim($msg);
 
 	if (mb_substr($msg, 0, 2) == 'ok') {
-		// Great, transition to name context.
+
+		// Great, a new user accepted an invite!
+		$usr = usr_get("id$usr_id");
+
+		// Transition to name context.
 		usr_set_context($usr_id, 'name');
+		
+		$phone = addslashes($usr->phone);
+
+		// Update invite record
+		db_update('usr_invite', array(
+			'accepted' => date('Y-m-d H:i:s')
+		), "phone = '$phone'");
+
+		$rsp = db_single("
+			SELECT *
+			FROM usr_invite
+			WHERE phone = ?
+			ORDER BY sent DESC
+		", array($usr->phone));
+		if ($rsp['row']) {
+			$invite = $rsp['row'];
+			msg_tx($invite->usr_id, xo('cmd_invite_accepted', $usr->phone), $rx_id);
+		}
+
+		// Send intro text out
 		$tx_msg = xo('ctx_intro');
 	} else {
 		$tx_msg = xo('ctx_invite_sorry');
 	}
-
-	// TODO: inform person who invited
 
 	return array(
 		'ok' => 1,

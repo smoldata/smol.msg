@@ -251,6 +251,25 @@ function usr_get_first_msg($usr_id, $formatted = false) {
 	);
 }
 
+function usr_get_last_invite($usr_id) {
+
+	$rsp = db_single("
+		SELECT *
+		FROM usr_invite
+		WHERE usr_id = ?
+		ORDER BY created DESC
+	", array($usr_id));
+	if (empty($rsp['row'])) {
+		return array(
+			'ok' => 0,
+			'xo' => 'err_db'
+		);
+	}
+
+	$rsp['invite'] = $rsp['row'];
+	return $rsp;
+}
+
 function usr_set_status($who, $status) {
 
 	$usr = usr_get($who);
@@ -493,47 +512,56 @@ function usr_update_active_time($usr_id, $column = 'active') {
 	));
 }
 
-function usr_invite($inviter_id, $invited_phone) {
+function usr_invite($usr_id, $phone) {
 
-	$invited_phone = util_normalize_phone($invited_phone);
-	if (! $invited_phone) {
+	$phone = util_normalize_phone($phone);
+	if (! $phone) {
 		return array(
 			'ok' => 0,
 			'xo' => 'err_invalid_phone'
 		);
 	}
 
-	$rsp = usr_get_by_id($inviter_id);
-	util_ensure_rsp($rsp);
-	$inviter = $rsp['usr'];
+	$usr = usr_get("id$usr_id");
+	if ($usr->status == 'banned') {
+		return array(
+			'ok' => 0,
+			'xo' => 'err_unknown'
+		);
+	}
 
 	// First make sure the phone number is a new one.
 	$rsp = db_single("
 		SELECT *
 		FROM usr
 		WHERE phone = ?
-	", array($invited_phone));
+	", array($phone));
 
-	if (empty($rsp['row'])) {
-		$rsp = db_insert('usr', array(
-			'phone' => $invited_phone,
-			'name' => substr($invited_phone, -4, 4),
-			'context' => 'invited',
-			'joined' => date('Y-m-d H:i:s'),
-			'invited_by' => $inviter_id
-		));
-		util_ensure_rsp($rsp);
-		return array(
-			'ok' => 1,
-			'inviter' => $inviter,
-			'invited_id' => $rsp['insert_id']
-		);
-	} else {
+	if (! empty($rsp['row'])) {
 		return array(
 			'ok' => 0,
-			'xo' => 'err_invited_already_exists'
+			'xo' => 'err_invited_exists'
 		);
 	}
+
+	$created = date('Y-m-d H:i:s');
+	$rsp = db_insert('usr_invite', array(
+		'usr_id' => $usr_id,
+		'phone' => $phone,
+		'invitation' => xo('cmd_invite_default', $usr->name, $usr->phone),
+		'created' => $created
+	));
+	if (! $rsp['ok']) {
+		return array(
+			'ok' => 0,
+			'xo' => 'err_db'
+		);
+	}
+
+	return array(
+		'ok' => 1,
+		'invite_id' => $rsp['insert_id']
+	);
 }
 
 function usr_create_login() {

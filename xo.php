@@ -38,8 +38,12 @@ $xo_templates = array(
 	'cmd_mute_announce' =>    "User %s has muted %s.",
 	'cmd_unmute_announce' =>  "User %s has UNmuted %s.",
 	'cmd_about' =>            "There are %d people in the chat. You can read the archives at:\n%s",
-	'cmd_invite_hello' =>     "Hello! Someone with the name %s (%s) has invited you to an SMS chat.\nReply \"ok\" to join. (Or just ignore this.)",
+	'cmd_invite_preview' =>   "Send invitation?\n“%s”\nReply Y (send), N (cancel), or with something else to change the invitation text.",
+	'cmd_invite_default' =>   "Hello! %s (%s) has invited you to an SMS chat.",
+	'cmd_invite_hello' =>     "%s\nReply \"ok\" to join. (Or just ignore this.)",
 	'cmd_invite_sent' =>      "Your invitation has been sent!",
+	'cmd_invite_cancel' =>    "Ok, you have NOT sent an invitation.",
+	'cmd_invite_accepted' =>  "Your invitation to %s has been accepted! Thank you for spreading the word :)",
 	'cmd_banned' =>           "User %s has been banned.",
 	'cmd_unbanned' =>         "User %s has been UNbanned.",
 	'cmd_makeadmin' =>        "User %s is now an admin.",
@@ -65,6 +69,7 @@ $xo_templates = array(
 	'err_name_empty' =>       'Sorry, your name cannot be empty!',
 	'err_name_exists' =>      'Oops, somebody else already has that name.',
 	'err_name_unchanged' =>   'Oops, that is already your current name!',
+	'err_invited_exists' =>   "Oh, that phone number has already joined the chat! Invite NOT sent.",
 	'err_user_not_found' =>   "Huh, that user does not exist. Sorry!",
 	'err_cannot_mute_self' => "Uhh, sorry you cannot mute yourself!",
 	'err_invalid_phone' =>    "Hmm. That phone number doesn't look valid.",
@@ -73,7 +78,8 @@ $xo_templates = array(
 	'err_channel_format' =>   'Sorry, channel names must be limited to 16 letters, numbers, or underscores (no spaces).',
 	'err_msg_unknown' =>      "Huh, message with rx ID %d does not exist.",
 	'err_no_hold_found' =>    "Huh, no hold for message ID %d was found. Maybe it already got approved?",
-	'err_db' =>               "Oh no! There was a database-related error."
+	'err_db' =>               "Oh no! There was a database-related error.",
+	'err_unknown' =>          "Oops, something strange and unexpected happened."
 );
 
 function xo() {

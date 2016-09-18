@@ -188,17 +188,16 @@ function sms_command_about($usr_id) {
 	return xo('cmd_about', $user_count, $website_url);
 }
 
-function sms_command_invite($usr_id, $invite_phone, $rx_id) {
+function sms_command_invite($usr_id, $phone, $rx_id) {
 
 	// Invite a friend to join the chat: /invite [phone]
 
-	$rsp = usr_invite($usr_id, $invite_phone);
+	$rsp = usr_invite($usr_id, $phone);
 	if ($rsp['ok']) {
-		$inviter = $rsp['inviter'];
-		$invited_id = $rsp['invited_id'];
-		$invitation = xo('cmd_invite_hello', $inviter->name, $inviter->phone);
-		msg_tx($invited_id, $invitation, $rx_id);
-		return xo('cmd_invite_sent');
+		usr_set_context($usr_id, 'send_invite');
+		$usr = usr_get("id$usr_id");
+		$invitation = xo('cmd_invite_default', $usr->name, $usr->phone);
+		return xo('cmd_invite_preview', $invitation);
 	} else {
 		return xo($rsp['xo']);
 	}
