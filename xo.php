@@ -4,7 +4,10 @@ global $xo_templates;
 $xo_templates = array(
 	'ctx_intro' =>            "Welcome!\nPlease reply with the username you'd like to use. It doesn't have to be your actual name, get creative! You can change it later if you want.",
 	'ctx_intro_admin' =>      "You are the first admin user! Parts [in brackets] are admin-only messages. Use \"/admin [name]\" to promote someone else.",
-	'ctx_name' =>             "Thanks, %s.\nSend your first message out?\n“%s”\nPlease reply Y or N.",
+	'ctx_name' =>             "Thanks, %s.\nBy proceeding, you agree to the Code of Conduct, posted at %s.\nReply \"ok\" to proceed.",
+	'ctx_coc_nope' =>         "Sorry, you have to agree to the Code of Conduct (%s) before proceeding.\nReply \"ok\" to agree.",
+	'ctx_coc_mod' =>          "Reply \"/mod\" if you ever need help from a moderator.",
+	'ctx_coc_first_msg' =>    "%s\nSend out your first message?\n“%s”\nPlease reply Y or N.",
 	'ctx_first_msg' =>        "%s\nReply /stop to leave, or send /help for more commands. Archives are available at:\n%s",
 	'ctx_first_msg_sent' =>   "Message sent!",
 	'ctx_first_msg_saved' =>  "Message saved.",

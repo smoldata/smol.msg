@@ -19,7 +19,7 @@ if (! empty($_POST['From']) &&
 	exit;
 }
 
-$topic = 'smol msg svc';
+$topic = 'smol';
 
 ?>
 <!DOCTYPE html>

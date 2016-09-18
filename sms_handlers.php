@@ -98,13 +98,47 @@ function sms_name($usr_id, $rx_msg, $rx_id) {
 		util_ensure_rsp($rsp);
 		$usr = $rsp['usr'];
 
+		// Transition to coc
+		usr_set_context($usr_id, 'coc');
+
+		$coc_url = "$website_url/conduct";
+		$tx_msg = xo('ctx_name', $name, $coc_url);
+
+	} else {
+		// Invalid name
+		$tx_msg = xo($rsp['xo']);
+		$tx_msg .= "\nPlease try again.";
+	}
+
+	return array(
+		'ok' => 1,
+		'tx_msg' => $tx_msg
+	);
+}
+
+function sms_coc($usr_id, $rx_msg, $rx_id) {
+	
+	// 'coc' is the Code of Conduct context. The user has to reply 'ok' in
+	// order to proceed.
+
+	include(__DIR__ . '/config.php');
+
+	$msg = strtolower($rx_msg);
+	$msg = trim($msg);
+
+	if (mb_substr($msg, 0, 2) == 'ok') {
+
+		// What happens next depends on whether the user was invited.
+
 		if (! empty($usr->invited_by)) {
 			// If the user was *invited*, just jump into the chat.
 			usr_set_context($usr_id, 'chat');
 			$count = xo_chat_count($usr_id);
-			$tx_msg = xo('ctx_first_msg', $count, $website_url);
+			$mod = xo('ctx_coc_mod');
+			$tx_msg = xo('ctx_first_msg', "$mod $count", $website_url);
 
 			// Announce that the user has joined the chat
+			$usr = usr_get("id$usr_id");
 			$announcement = xo('cmd_start_announce', $usr->name);
 			msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 		} else {
@@ -112,30 +146,14 @@ function sms_name($usr_id, $rx_msg, $rx_id) {
 			$rsp = usr_get_first_msg($usr_id, 'formatted');
 			util_ensure_rsp($rsp);
 			$first_msg = $rsp['first_msg'];
-			$first_msg_held = $rsp['first_msg_held'];
 
-			if ($first_msg_held) {
-				// On second thought, the message was held, so
-				// no need to ask about it.
-
-				// Just join the chat!
-				usr_set_context($usr_id, 'chat');
-
-				// Announce that the user has joined the chat
-				$announcement = xo('cmd_start_announce', $usr->name);
-				msg_admin_tx($usr_id, "[$announcement]", $rx_id);
-
-				$tx_msg = xo_first_msg_held($usr_id);
-			} else {
-				usr_set_context($usr_id, 'first_msg');
-				$tx_msg = xo('ctx_name', $name, $first_msg);
-			}
+			usr_set_context($usr_id, 'first_msg');
+			$mod = xo('ctx_coc_mod');
+			$tx_msg = xo('ctx_coc_first_msg', $mod, $first_msg);
 		}
-
 	} else {
-		// Invalid name
-		$tx_msg = xo($rsp['xo']);
-		$tx_msg .= "\nPlease try again.";
+		$coc_url = "$website_url/conduct";
+		$tx_msg = xo('ctx_coc_nope', $coc_url);
 	}
 
 	return array(
