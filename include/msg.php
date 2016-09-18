@@ -383,9 +383,7 @@ function msg_chat($usr_id, $rx_msg, $rx_id) {
 		);
 	}
 
-	// TODO: don't bake in the username in the channel message.
-	$channel_msg = "$usr->name: $rx_msg";
-	$chat_id = msg_add_to_channel($rx_id, $usr->id, $channel_msg);
+	$chat_id = msg_add_to_channel($rx_id, $usr->id, $rx_msg);
 	$rsp = usr_get_active($usr->id);
 	util_ensure_rsp($rsp);
 

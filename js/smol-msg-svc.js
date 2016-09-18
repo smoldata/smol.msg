@@ -11,7 +11,7 @@ jQuery(document).ready(function($) {
 	var timeMarker = null;
 	var userMediaStream = null;
 	var msgPollingInterval = 2500;
-	var loginPollingInterval = 1500;
+	var loginPollingInterval = 5000;
 
 	if ($('body').hasClass('eo1')) {
 		msgPollingInterval = 10000;
@@ -85,7 +85,9 @@ jQuery(document).ready(function($) {
 		}
 	}
 
-	$.ajax('load.php', {
+	var channel = $('#msgs').data('channel');
+	$.ajax('load.php?channel=' + channel, {
+		method: 'POST',
 		success: function(rsp) {
 			$('#msgs').html('<div id="msg-container"></div>');
 			$.each(rsp.msgs, function(i, msg) {
@@ -292,12 +294,13 @@ jQuery(document).ready(function($) {
 	});
 
 	setInterval(function() {
-		var latestId = null;
+		var latestId = 0;
 		if (messages.length > 0) {
 			var latestId = messages[messages.length - 1].id;
 		}
 
-		$.ajax('load.php', {
+		var channel = $('#msgs').data('channel');
+		$.ajax('load.php?channel=' + channel, {
 			method: 'POST',
 			data: 'after_id=' + latestId,
 			success: function(rsp) {

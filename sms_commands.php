@@ -1,6 +1,6 @@
 <?php
 
-function sms_command($usr_id, $rx_msg, $rx_id, $cmd, $via_service = 'twilio') {
+function sms_command($usr_id, $rx_msg, $rx_id, $cmd) {
 
 	// Call the command handler function
 	$cmd_func = "sms_command_{$cmd['id']}";

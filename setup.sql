@@ -30,6 +30,7 @@ CREATE TABLE `usr` (
   `name` varchar(16) DEFAULT NULL,
   `status` varchar(255) DEFAULT 'user',
   `context` varchar(255) DEFAULT NULL,
+  `channel` varchar(16) DEFAULT 'main',
   `joined` datetime DEFAULT NULL,
   `active` datetime DEFAULT NULL,
   `web_active` datetime DEFAULT NULL,
@@ -52,6 +53,7 @@ CREATE TABLE `usr_mute` (
 DROP TABLE IF EXISTS `channel`;
 CREATE TABLE `channel` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `channel` varchar(16) DEFAULT 'main',
   `rx_id` int(11) NOT NULL,
   `usr_id` int(11) NOT NULL,
   `msg` text NOT NULL,
@@ -59,7 +61,7 @@ CREATE TABLE `channel` (
   `ip_address` varchar(255) DEFAULT NULL,
   `avatar_image` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `usr_login`;
 CREATE TABLE `usr_login` (

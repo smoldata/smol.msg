@@ -2,36 +2,56 @@
 
 include 'include/init.php';
 
-$db = db_setup();
+$channel = 'main';
+if (! empty($_GET['channel'])) {
+	$channel = $_GET['channel'];
+}
 
 if (! empty($_POST['after_id'])) {
 	$after_id = intval($_POST['after_id']);
-	$query = $db->prepare("
-		SELECT id, rx_id, msg, created
-		FROM channel
-		WHERE id > ?
-		ORDER BY created
+	$rsp = db_fetch("
+		SELECT channel.id AS id,
+		       usr.name AS name,
+		       channel.msg AS msg,
+		       channel.rx_id AS rx_id,
+		       channel.created AS created
+		FROM channel, usr
+		WHERE channel.id > ?
+		  AND channel.channel = ?
+		  AND channel.usr_id = usr.id
+		ORDER BY channel.created
 		LIMIT 100
-	");
-	$query->execute(array($after_id));
+	", array($after_id, $channel));
 } else {
-	$query = $db->query("
-		SELECT id, rx_id, msg, created
-		FROM channel
-		ORDER BY created
+	$rsp = db_fetch("
+		SELECT channel.id AS id,
+		       usr.name AS name,
+		       channel.msg AS msg,
+		       channel.rx_id AS rx_id,
+		       channel.created AS created
+		FROM channel, usr
+		WHERE channel.channel = ?
+		  AND channel.usr_id = usr.id
+		ORDER BY channel.created
 		LIMIT 100
-	");
+	", array($channel));
 }
 
-$msgs = $query->fetchAll();
+if (! $rsp['ok']) {
+	exit;
+}
+
+$msgs = $rsp['rows'];
+$usr_ids = array();
+
 foreach ($msgs as $msg) {
 	$msg->id = intval($msg->id);
-	$msg->msg = htmlentities($msg->msg);
+	$msg->msg = htmlentities($msg->name) . ': ' . htmlentities($msg->msg);
 	$msg->timestamp = strtotime($msg->created);
 }
 
 if (! empty($_SESSION['usr_id'])) {
-	// Mark the tx messages as delivered, so that they don't get an SMS
+	// Mark the tx messages as delivered, so the user doesn't get an SMS
 	// update for them.
 	$msg_ids = array();
 	foreach ($msgs as $msg) {
@@ -39,17 +59,15 @@ if (! empty($_SESSION['usr_id'])) {
 	}
 	$msg_ids = implode(', ', $msg_ids);
 	$batch_uuid = util_uuid();
-	$query = $db->prepare("
-		UPDATE tx
-		SET transmit_batch = ?
-		WHERE rx_id IN ($msg_ids)
-		  AND usr_id = ?
-		  AND transmit_batch IS NULL
-	");
-	$query->execute(array(
-		$batch_uuid,
-		$_SESSION['usr_id']
-	));
+	$usr_id = intval($_SESSION['usr_id']);
+	$where = "
+		rx_id IN ($msg_ids)
+		AND usr_id = $usr_id
+		AND transmit_batch IS NULL
+	";
+	$rsp = db_update('tx', array(
+		'transmit_batch' => $batch_uuid
+	), $where);
 
 	usr_update_active_time($_SESSION['usr_id'], 'web_active');
 }

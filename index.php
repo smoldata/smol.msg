@@ -20,6 +20,11 @@ if (! empty($_POST['From']) &&
 }
 
 $topic = 'smol';
+$channel = 'main';
+
+if (preg_match('/^\/([a-z0-9_]+)/i', $_SERVER['REQUEST_URI'], $matches)) {
+	$channel = $matches[1];
+}
 
 ?>
 <!DOCTYPE html>
@@ -36,7 +41,7 @@ $topic = 'smol';
 	</head>
 	<body class="<?php if (! empty($_GET['eo1'])) { ?> eo1<?php } if (! empty($_SESSION['usr_id'])) { ?> logged-in<?php } ?>">
 		<div id="page">
-			<div id="msgs"></div>
+			<div id="msgs" data-channel="<?php echo $channel; ?>"></div>
 			<form action="submit.php" method="post">
 				<input type="hidden" name="image" value="">
 				<input type="hidden" name="avatar_color" value="">
