@@ -126,6 +126,14 @@ function usr_set_name($usr_id, $name, $rx_id) {
 			'xo' => 'err_name_format'
 		);
 	}
+	
+	if (preg_match('/^id\d+$/', $name)) {
+		// Edge case: cannot have a name "id1234" because ... reasons
+		return array(
+			'ok' => 0,
+			'xo' => 'err_name_format'
+		);
+	}
 
 	$rsp = usr_get_by_name($name);
 	util_ensure_rsp($rsp);
@@ -188,7 +196,7 @@ function usr_set_channel($usr_id, $channel, $rx_id) {
 
 	$rsp = db_value("
 		SELECT COUNT(id)
-		FROM channel
+		FROM chat
 		WHERE channel = ?
 	", array($channel));
 	if (! $rsp['ok']) {
@@ -276,6 +284,22 @@ function usr_is_admin($usr_id) {
 	}
 
 	return ($usr->status == 'admin');
+}
+
+function usr_is_mod($usr_id) {
+
+	$usr = usr_get("id$usr_id");
+	if (! $usr) {
+		if (DEBUG) {
+			echo "Unknown user $usr_id!\n";
+		}
+		return false;
+	}
+
+	return (
+		$usr->status == 'admin' ||
+		$usr->status == 'mod'
+	);
 }
 
 function usr_is_first() {

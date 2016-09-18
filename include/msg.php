@@ -383,7 +383,7 @@ function msg_chat($usr_id, $rx_msg, $rx_id) {
 		);
 	}
 
-	$rsp = msg_add_to_channel($rx_id, $usr->id, $rx_msg, $usr->channel);
+	$rsp = msg_add_to_chat($rx_id, $usr->id, $rx_msg, $usr->channel);
 	if (! $rsp['ok']) {
 		return $rsp;
 	}
@@ -415,18 +415,20 @@ function msg_chat($usr_id, $rx_msg, $rx_id) {
 	if (DEBUG) {
 		echo "Sent message to " . count($active_usrs) . " active users.\n";
 	}
+	
+	$enc_msg = htmlentities("$usr->name: $rx_msg");
 
 	return array(
 		'ok' => 1,
 		'id' => $chat_id,
-		'msg' => $rx_msg
+		'msg' => $enc_msg
 	);
 }
 
-function msg_add_to_channel($rx_id, $usr_id, $msg, $channel = 'main') {
+function msg_add_to_chat($rx_id, $usr_id, $msg, $channel = 'main') {
 	$db = db_setup();
 	$created = date('Y-m-d H:i:s');
-	return db_insert('channel', array(
+	return db_insert('chat', array(
 		'channel' => $channel,
 		'usr_id' => $usr_id,
 		'msg' => $msg,

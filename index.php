@@ -6,13 +6,6 @@ if (! empty($_POST['From']) &&
     ! empty($_POST['Body'])) {
 	include(__DIR__ . '/twilio.php');
 	exit;
-} else if (! empty($_POST['msg']) &&
-           ! empty($_SESSION['usr_id'])) {
-	// Web submission
-	$rsp = msg_router($_SESSION['usr_id'], $_POST['msg']);
-	header('Content-Type: application/json');
-	echo json_encode($rsp);
-	exit;
 } else if (! empty($_GET['cron'])) {
 	header('Content-Type: text/plain');
 	// register_shutdown_function should call msg_send_pending

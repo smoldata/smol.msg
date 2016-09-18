@@ -50,8 +50,8 @@ CREATE TABLE `usr_mute` (
   UNIQUE KEY `usr_id` (`usr_id`,`muted_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-DROP TABLE IF EXISTS `channel`;
-CREATE TABLE `channel` (
+DROP TABLE IF EXISTS `chat`;
+CREATE TABLE `chat` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `channel` varchar(16) DEFAULT 'main',
   `usr_id` int(11) NOT NULL,

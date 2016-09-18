@@ -10,29 +10,29 @@ if (! empty($_GET['channel'])) {
 if (! empty($_POST['after_id'])) {
 	$after_id = intval($_POST['after_id']);
 	$rsp = db_fetch("
-		SELECT channel.id AS id,
+		SELECT chat.id AS id,
 		       usr.name AS name,
-		       channel.msg AS msg,
-		       channel.rx_id AS rx_id,
-		       channel.created AS created
-		FROM channel, usr
-		WHERE channel.id > ?
-		  AND channel.channel = ?
-		  AND channel.usr_id = usr.id
-		ORDER BY channel.created
+		       chat.msg AS msg,
+		       chat.rx_id AS rx_id,
+		       chat.created AS created
+		FROM chat, usr
+		WHERE chat.id > ?
+		  AND chat.channel = ?
+		  AND chat.usr_id = usr.id
+		ORDER BY chat.created
 		LIMIT 100
 	", array($after_id, $channel));
 } else {
 	$rsp = db_fetch("
-		SELECT channel.id AS id,
+		SELECT chat.id AS id,
 		       usr.name AS name,
-		       channel.msg AS msg,
-		       channel.rx_id AS rx_id,
-		       channel.created AS created
-		FROM channel, usr
-		WHERE channel.channel = ?
-		  AND channel.usr_id = usr.id
-		ORDER BY channel.created
+		       chat.msg AS msg,
+		       chat.rx_id AS rx_id,
+		       chat.created AS created
+		FROM chat, usr
+		WHERE chat.channel = ?
+		  AND chat.usr_id = usr.id
+		ORDER BY chat.created
 		LIMIT 100
 	", array($channel));
 }

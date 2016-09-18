@@ -126,6 +126,30 @@ function sms_command_leave($usr_id, $args = null, $rx_id = null) {
 	return sms_command_channel($usr_id, 'main', $rx_id);
 }
 
+function sms_command_mod($usr_id, $who = null, $rx_id = null) {
+
+	// This can be used in two different ways:
+	// - Users can request help from a moderator: /mod
+	// - Moderators can respond to a request: /mod [who]
+
+	if (empty($who) ||
+	    ! usr_is_mod($usr_id)) {
+		if ($usr->context != 'mod_request') {
+			// Confirm this is what they want to do
+			usr_set_context($usr_id, 'mod_request');
+			return xo('cmd_mod_confirm');
+		} else {
+			return xo('cmd_mod_again');
+		}
+	} else if (usr_is_mod($usr_id)) {
+		$usr = usr_get("id$usr_id");
+		$target = usr_get($who);
+		$announcement = xo('cmd_mod_announce', $usr->name, $target->name);
+		msg_admin_tx($usr_id, $announcement, $rx_id);
+		return xo('cmd_mod_details', $target->name, $target->phone);
+	}
+}
+
 function sms_command_mute($usr_id, $mute_name = null, $rx_id = null) {
 
 	// Stop getting messages from a particular user: /mute [name]
@@ -202,7 +226,7 @@ function sms_command_hold($usr_id, $msg_id, $rx_id) {
 
 	// Hold a message (admin users only)
 
-	if (! usr_is_admin($usr_id)) {
+	if (! usr_is_mod($usr_id)) {
 		return xo('err_command_unknown');
 	}
 
@@ -251,7 +275,7 @@ function sms_command_ban($usr_id, $who, $rx_id) {
 
 	// Teh BAN HAMMER (admin users only)
 
-	if (! usr_is_admin($usr_id)) {
+	if (! usr_is_mod($usr_id)) {
 		return xo('err_command_unknown');
 	}
 
@@ -269,7 +293,7 @@ function sms_command_unban($usr_id, $who, $rx_id) {
 
 	// Unban a user (admin users only)
 
-	if (! usr_is_admin($usr_id)) {
+	if (! usr_is_mod($usr_id)) {
 		return xo('err_command_unknown');
 	}
 
@@ -283,7 +307,7 @@ function sms_command_unban($usr_id, $who, $rx_id) {
 	}
 }
 
-function sms_command_admin($usr_id, $who, $rx_id) {
+function sms_command_makeadmin($usr_id, $who, $rx_id) {
 
 	// Make another user an admin (admin users only)
 
@@ -293,7 +317,7 @@ function sms_command_admin($usr_id, $who, $rx_id) {
 
 	$rsp = usr_set_status($who, 'admin');
 	if ($rsp['ok']) {
-		$tx_msg = xo('cmd_admin', $rsp['name']);
+		$tx_msg = xo('cmd_makeadmin', $rsp['name']);
 		msg_admin_tx($usr_id, "[$tx_msg]", $rx_id);
 		return $tx_msg;
 	} else {
@@ -301,7 +325,7 @@ function sms_command_admin($usr_id, $who, $rx_id) {
 	}
 }
 
-function sms_command_mod($usr_id, $who, $rx_id) {
+function sms_command_makemod($usr_id, $who, $rx_id) {
 
 	// Make another user a moderator (admin users only)
 
@@ -311,7 +335,7 @@ function sms_command_mod($usr_id, $who, $rx_id) {
 
 	$rsp = usr_set_status($who, 'mod');
 	if ($rsp['ok']) {
-		$tx_msg = xo('cmd_mod', $rsp['name']);
+		$tx_msg = xo('cmd_makemod', $rsp['name']);
 		msg_admin_tx($usr_id, "[$tx_msg]", $rx_id);
 		return $tx_msg;
 	} else {

@@ -44,7 +44,7 @@ function sms_intro($usr_id, $rx_msg, $rx_id) {
 
 	// Send the first incoming message out to admins for
 	// moderation.
-	$admin_options = "[/hold {$rx_id} /ban $usr->name]";
+	$admin_options = "[/hold {$rx_id} /ban id$usr->id]";
 	$admin_msg = "$rx_msg\n$admin_options";
 	$signed_msg = msg_signed_format($usr, $admin_msg);
 	msg_admin_tx($usr_id, $signed_msg, $rx_id);
@@ -285,4 +285,30 @@ function sms_chat($usr_id, $rx_msg, $rx_id) {
 	// 'chat' is when the user is sending messages to other users.
 
 	return msg_chat($usr_id, $rx_msg, $rx_id);
+}
+
+function sms_mod_request($usr_id, $rx_msg, $rx_id) {
+
+	// 'mod_request' is when a user has sent "/mod" to request help, but
+	// still needs to confirm that they want help.
+
+	$usr = usr_get("id$usr_id");
+
+	$msg = strtolower($rx_msg);
+	$msg = trim($msg);
+
+	if (mb_substr($msg, 0, 2) == 'ok') {
+		usr_set_context($usr_id, 'stopped');
+		$announcement = xo('cmd_mod_request', $usr->name, $usr->name);
+		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+		$tx_msg = xo('ctx_mod_sent');
+	} else {
+		usr_set_context($usr_id, 'chat');
+		$tx_msg = xo('ctx_mod_cancel');
+	}
+
+	return array(
+		'ok' => 1,
+		'tx_msg' => $tx_msg
+	);
 }
