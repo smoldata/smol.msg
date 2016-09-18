@@ -411,13 +411,13 @@ function usr_get_web_active() {
 	return $active;
 }
 
-function usr_get_admins($usr_id) {
+function usr_get_mods($usr_id) {
 	$rsp = db_column("
 		SELECT id
 		FROM usr
 		WHERE id != ?
 		  AND context = 'chat'
-		  AND status = 'admin'
+		  AND (status = 'admin' OR status = 'mod')
 	", array($usr_id));
 	if (! $rsp['ok']) {
 		return $rsp;

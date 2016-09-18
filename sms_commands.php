@@ -57,8 +57,6 @@ function sms_command_stop($usr_id, $args = null, $rx_id = null) {
 	$usr = usr_get("id$usr_id");
 	if ($usr) {
 		usr_set_context($usr_id, 'stopped');
-		$announcement = xo('cmd_stop_announce', $usr->name);
-		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_stop');
 	} else {
 		return xo('err_command_unknown');
@@ -79,8 +77,6 @@ function sms_command_start($usr_id, $args = null, $rx_id = null) {
 	} else {
 		usr_set_context($usr_id, 'chat');
 		$count = xo_chat_count($usr_id);
-		$announcement = xo('cmd_start_announce', $usr->name);
-		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_start', $count);
 	}
 }
@@ -92,7 +88,7 @@ function sms_command_name($usr_id, $new_name = null, $rx_id = null) {
 	$rsp = usr_set_name($usr_id, $new_name, $rx_id);
 	if ($rsp['ok']) {
 		$announcement = xo('cmd_name_announce', $rsp['old_name'], $rsp['new_name']);
-		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+		msg_mod_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_name_changed', $rsp['new_name']);
 	} else {
 		return xo($rsp['xo']);
@@ -109,7 +105,7 @@ function sms_command_channel($usr_id, $channel = null, $rx_id = null) {
 			// Announce the creation of a new channel
 			$usr = usr_get("id$usr_id");
 			$announcement = xo('cmd_channel_announce', $channel, $usr->name);
-			msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+			msg_mod_tx($usr_id, "[$announcement]", $rx_id);
 		}
 		$count = xo_chat_count($usr_id, $channel);
 		return xo('cmd_channel', $channel, $count);
@@ -145,7 +141,7 @@ function sms_command_mod($usr_id, $who = null, $rx_id = null) {
 		$usr = usr_get("id$usr_id");
 		$target = usr_get($who);
 		$announcement = xo('cmd_mod_announce', $usr->name, $target->name);
-		msg_admin_tx($usr_id, $announcement, $rx_id);
+		msg_mod_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_mod_details', $target->name, $target->phone);
 	}
 }
@@ -158,7 +154,7 @@ function sms_command_mute($usr_id, $mute_name = null, $rx_id = null) {
 	if ($rsp['ok']) {
 		$usr = usr_get("id$usr_id");
 		$announcement = xo('cmd_mute_announce', $usr->name, $mute_name);
-		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+		msg_mod_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_muted', $mute_name, $mute_name);
 	} else {
 		return xo($rsp['xo']);
@@ -173,7 +169,7 @@ function sms_command_unmute($usr_id, $mute_name = null) {
 	if ($rsp['ok']) {
 		$usr = usr_get("id$usr_id");
 		$announcement = xo('cmd_unmute_announce', $usr->name, $mute_name);
-		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+		msg_mod_tx($usr_id, "[$announcement]", $rx_id);
 		return xo('cmd_unmuted', $mute_name);
 	} else {
 		return xo($rsp['xo']);
@@ -224,7 +220,46 @@ function sms_command_login($usr_id, $login_code) {
 
 function sms_command_hold($usr_id, $msg_id, $rx_id) {
 
-	// Hold a message (admin users only)
+	// Hold a message (moderators only)
+
+	if (! usr_is_mod($usr_id)) {
+		return xo('err_command_unknown');
+	}
+
+	$msg_id = intval($msg_id);
+
+	$rsp = db_single("
+		SELECT *
+		FROM rx
+		WHERE id = ?
+	", array($msg_id));
+	if (empty($rsp['row'])) {
+		return xo('err_msg_unknown', $msg_id);
+	}
+
+	$held = date('Y-m-d H:i:s');
+	$rsp = db_insert('rx_hold', array(
+		'rx_id' => $msg_id,
+		'usr_id' => $usr_id,
+		'active' => 1,
+		'held' => $held
+	));
+
+	if ($rsp['ok']) {
+		// Announce the hold to moderators
+		$usr = usr_get("id$usr_id");
+		$announcement = xo('cmd_hold_announce', $usr->name, $msg_id, $msg_id);
+		msg_mod_tx($usr_id, "[$announcement]", $rx_id);
+
+		return xo('cmd_hold_created', $msg_id, $msg_id);
+	} else {
+		return xo('err_db');
+	}
+}
+
+function sms_command_approve($usr_id, $msg_id, $rx_id) {
+
+	// Approve a held message: /approve [msg id] (moderators only)
 
 	if (! usr_is_mod($usr_id)) {
 		return xo('err_command_unknown');
@@ -245,35 +280,35 @@ function sms_command_hold($usr_id, $msg_id, $rx_id) {
 		SELECT *
 		FROM rx_hold
 		WHERE rx_id = ?
+		  AND active = 1
 	", array($msg_id));
-	$existing = $rsp['row'];
-
-	if (empty($existing)) {
-		$held = date('Y-m-d H:i:s');
-		$rsp = db_insert('rx_hold', array(
-			'rx_id' => $msg_id,
-			'usr_id' => $usr_id,
-			'active' => 1,
-			'held' => $held
-		));
-
-		$usr = usr_get("id$usr_id");
-		$announcement = xo('cmd_hold_announce', $usr->name, $msg_id, $msg_id);
-		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
-
-		if ($rsp['ok']) {
-			return xo('cmd_hold_created', $msg_id, $msg_id);
-		} else {
-			return xo('err_db');
-		}
-	} else {
-		return xo('cmd_hold_exists', $msg_id, $msg_id);
+	if (empty($rsp['row'])) {
+		return xo('err_no_hold_found', $msg_id);
 	}
+	$msg = $rsp['row'];
+
+	$approved = date('Y-m-d H:i:s');
+	$rsp = db_update('rx_hold', array(
+		'active' => 0,
+		'approved' => $approved
+	));
+
+	if ($rsp['ok']) {
+		// Announce the approval
+		$usr = usr_get("id$usr_id");
+		$announcement = xo('cmd_approve_announce', $usr->name, $msg_id);
+		msg_mod_tx($usr_id, "[$announcement]", $rx_id);
+
+		return xo('cmd_approve', $msg_id);
+	} else {
+		return xo('err_db');
+	}
+
 }
 
 function sms_command_ban($usr_id, $who, $rx_id) {
 
-	// Teh BAN HAMMER (admin users only)
+	// Teh BAN HAMMER (moderators only)
 
 	if (! usr_is_mod($usr_id)) {
 		return xo('err_command_unknown');
@@ -282,7 +317,7 @@ function sms_command_ban($usr_id, $who, $rx_id) {
 	$rsp = usr_set_status($who, 'banned');
 	if ($rsp['ok']) {
 		$tx_msg = xo('cmd_banned', $rsp['name']);
-		msg_admin_tx($usr_id, "[$tx_msg]", $rx_id);
+		msg_mod_tx($usr_id, "[$tx_msg]", $rx_id);
 		return $tx_msg;
 	} else {
 		return xo($rsp['xo']);
@@ -291,7 +326,7 @@ function sms_command_ban($usr_id, $who, $rx_id) {
 
 function sms_command_unban($usr_id, $who, $rx_id) {
 
-	// Unban a user (admin users only)
+	// Unban a user (moderators only)
 
 	if (! usr_is_mod($usr_id)) {
 		return xo('err_command_unknown');
@@ -300,7 +335,7 @@ function sms_command_unban($usr_id, $who, $rx_id) {
 	$rsp = usr_set_status($who, 'user');
 	if ($rsp['ok']) {
 		$tx_msg = xo('cmd_unbanned', $rsp['name']);
-		msg_admin_tx($usr_id, "[$tx_msg]", $rx_id);
+		msg_mod_tx($usr_id, "[$tx_msg]", $rx_id);
 		return $tx_msg;
 	} else {
 		return xo($rsp['xo']);
@@ -318,7 +353,7 @@ function sms_command_makeadmin($usr_id, $who, $rx_id) {
 	$rsp = usr_set_status($who, 'admin');
 	if ($rsp['ok']) {
 		$tx_msg = xo('cmd_makeadmin', $rsp['name']);
-		msg_admin_tx($usr_id, "[$tx_msg]", $rx_id);
+		msg_mod_tx($usr_id, "[$tx_msg]", $rx_id);
 		return $tx_msg;
 	} else {
 		return xo($rsp['xo']);
@@ -336,13 +371,13 @@ function sms_command_makemod($usr_id, $who, $rx_id) {
 	$rsp = usr_set_status($who, 'mod');
 	if ($rsp['ok']) {
 		$tx_msg = xo('cmd_makemod', $rsp['name']);
-		msg_admin_tx($usr_id, "[$tx_msg]", $rx_id);
+		msg_mod_tx($usr_id, "[$tx_msg]", $rx_id);
 		return $tx_msg;
 	} else {
 		return xo($rsp['xo']);
 	}
 }
 
-function sms_command_unknown($usr_id) {
+function sms_command_unknown() {
 	return xo('err_command_unknown');
 }

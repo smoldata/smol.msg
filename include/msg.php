@@ -53,11 +53,11 @@ function msg_tx($usr_id, $tx_msg, $rx_id, $send_now = false) {
 	return OK;
 }
 
-function msg_admin_tx($usr_id, $msg, $rx_id) {
+function msg_mod_tx($usr_id, $msg, $rx_id) {
 
 	if (is_array($msg)) {
 		foreach ($msg as $msg_part) {
-			$rsp = msg_admin_tx($usr_id, $msg_part, $rx_id);
+			$rsp = msg_mod_tx($usr_id, $msg_part, $rx_id);
 			if (! $rsp['ok']) {
 				return $rsp;
 			}
@@ -65,7 +65,7 @@ function msg_admin_tx($usr_id, $msg, $rx_id) {
 		return $rsp;
 	}
 
-	$rsp = usr_get_admins($usr_id);
+	$rsp = usr_get_mods($usr_id);
 	if (! $rsp['ok']) {
 		return $rsp;
 	}
@@ -375,7 +375,7 @@ function msg_chat($usr_id, $rx_msg, $rx_id) {
 	if ($usr->status == 'banned') {
 		// If the user is banned, just send their message to the admins.
 		$banned_msg = msg_signed_format($usr, "[banned] $rx_msg");
-		msg_admin_tx($usr->id, $banned_msg, $rx_id);
+		msg_mod_tx($usr->id, $banned_msg, $rx_id);
 		return array(
 			'ok' => 1,
 			'id' => rand(32, 64),
@@ -415,7 +415,7 @@ function msg_chat($usr_id, $rx_msg, $rx_id) {
 	if (DEBUG) {
 		echo "Sent message to " . count($active_usrs) . " active users.\n";
 	}
-	
+
 	$enc_msg = htmlentities("$usr->name: $rx_msg");
 
 	return array(

@@ -73,10 +73,11 @@ CREATE TABLE `usr_login` (
 
 DROP TABLE IF EXISTS `rx_hold`;
 CREATE TABLE `rx_hold` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `rx_id` int(11) unsigned NOT NULL,
   `usr_id` int(11) DEFAULT NULL,
   `active` int(11) DEFAULT '1',
   `held` datetime DEFAULT NULL,
   `accepted` datetime DEFAULT NULL,
-  PRIMARY KEY (`rx_id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -47,7 +47,7 @@ function sms_intro($usr_id, $rx_msg, $rx_id) {
 	$admin_options = "[/hold {$rx_id} /ban id$usr->id]";
 	$admin_msg = "$rx_msg\n$admin_options";
 	$signed_msg = msg_signed_format($usr, $admin_msg);
-	msg_admin_tx($usr_id, $signed_msg, $rx_id);
+	msg_mod_tx($usr_id, $signed_msg, $rx_id);
 
 	// Transition to name context.
 	usr_set_context($usr_id, 'name');
@@ -124,6 +124,8 @@ function sms_coc($usr_id, $rx_msg, $rx_id) {
 
 	include(__DIR__ . '/config.php');
 
+	$usr = usr_get("id$usr_id");
+
 	$msg = strtolower($rx_msg);
 	$msg = trim($msg);
 
@@ -139,18 +141,31 @@ function sms_coc($usr_id, $rx_msg, $rx_id) {
 			$tx_msg = xo('ctx_first_msg', "$mod $count", $website_url);
 
 			// Announce that the user has joined the chat
-			$usr = usr_get("id$usr_id");
 			$announcement = xo('cmd_start_announce', $usr->name);
-			msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+			msg_mod_tx($usr_id, "[$announcement]", $rx_id);
 		} else {
-			// Ask to send out the first message.
+
 			$rsp = usr_get_first_msg($usr_id, 'formatted');
 			util_ensure_rsp($rsp);
 			$first_msg = $rsp['first_msg'];
+			$first_msg_held = $rsp['first_msg_held'];
 
-			usr_set_context($usr_id, 'first_msg');
-			$mod = xo('ctx_coc_mod');
-			$tx_msg = xo('ctx_coc_first_msg', $mod, $first_msg);
+			if ($first_msg_held) {
+				// First message is held: just jump into to chat
+				usr_set_context($usr_id, 'chat');
+				$mod = xo('ctx_coc_mod');
+				$count = xo_chat_count($usr_id, $usr->channel);
+				$tx_msg = xo('ctx_first_msg', "$mod $count", $website_url);
+
+				// Announce that the user has joined the chat
+				$announcement = xo('cmd_start_announce', $usr->name);
+				msg_mod_tx($usr_id, "[$announcement]", $rx_id);
+			} else {
+				// Ask to send out the first message.
+				usr_set_context($usr_id, 'first_msg');
+				$mod = xo('ctx_coc_mod');
+				$tx_msg = xo('ctx_coc_first_msg', $mod, $first_msg);
+			}
 		}
 	} else {
 		$coc_url = "$website_url/conduct";
@@ -190,7 +205,7 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 
 	// Announce that the user has joined the chat
 	$announcement = xo('cmd_start_announce', $usr->name);
-	msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+	msg_mod_tx($usr_id, "[$announcement]", $rx_id);
 
 	// First, figure out $count: how many people are in the chat?
 
@@ -221,7 +236,7 @@ function sms_first_msg($usr_id, $rx_msg, $rx_id) {
 
 			// Announce that the user has joined the chat
 			$announcement = xo('cmd_start_announce', $usr->name);
-			msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+			msg_mod_tx($usr_id, "[$announcement]", $rx_id);
 
 			$tx_msg = xo_first_msg_held($usr_id);
 			return array(
@@ -300,11 +315,11 @@ function sms_mod_request($usr_id, $rx_msg, $rx_id) {
 	if (mb_substr($msg, 0, 2) == 'ok') {
 		usr_set_context($usr_id, 'stopped');
 		$announcement = xo('cmd_mod_request', $usr->name, $usr->name);
-		msg_admin_tx($usr_id, "[$announcement]", $rx_id);
-		$tx_msg = xo('ctx_mod_sent');
+		msg_mod_tx($usr_id, "[$announcement]", $rx_id);
+		$tx_msg = xo('cmd_mod_sent');
 	} else {
 		usr_set_context($usr_id, 'chat');
-		$tx_msg = xo('ctx_mod_cancel');
+		$tx_msg = xo('cmd_mod_cancel');
 	}
 
 	return array(
