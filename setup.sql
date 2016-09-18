@@ -81,3 +81,15 @@ CREATE TABLE `rx_hold` (
   `accepted` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `usr_invite`;
+CREATE TABLE `usr_invite` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `usr_id` int(11) DEFAULT NULL,
+  `phone` varchar(32) DEFAULT NULL,
+  `invitation` text,
+  `created` datetime DEFAULT NULL,
+  `sent` datetime DEFAULT NULL,
+  `accepted` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
