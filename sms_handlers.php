@@ -152,10 +152,15 @@ function sms_invited($usr_id, $rx_msg, $rx_id) {
 		
 		$phone = addslashes($usr->phone);
 
-		// Update invite record
+		// Update the usr_invite record
 		db_update('usr_invite', array(
 			'accepted' => date('Y-m-d H:i:s')
 		), "phone = '$phone'");
+
+		// Update the usr record
+		db_update('usr', array(
+			'joined' => date('Y-m-d H:i:s')
+		), "id = $usr_id");
 
 		$rsp = db_single("
 			SELECT *
