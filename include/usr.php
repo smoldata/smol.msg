@@ -162,6 +162,47 @@ function usr_set_name($usr_id, $name, $rx_id) {
 	);
 }
 
+function usr_set_channel($usr_id, $channel, $rx_id) {
+
+	$usr_id = intval($usr_id);
+	
+	if (DEBUG) {
+		echo "Setting channel for usr $usr_id to '$channel'.\n";
+	}
+
+	if (mb_strlen($channel) > 16 ||
+	    ! preg_match('/^[a-z0-9_]+$/i', $channel)) {
+		return array(
+			'ok' => 0,
+			'xo' => 'err_channel_format'
+		);
+	}
+
+	$rsp = db_update('usr', array(
+		'channel' => $channel
+	), "id = $usr_id");
+	if (! $rsp['ok']) {
+		$rsp['xo'] = 'err_db';
+		return $rsp;
+	}
+
+	$rsp = db_value("
+		SELECT COUNT(id)
+		FROM channel
+		WHERE channel = ?
+	", array($channel));
+	if (! $rsp['ok']) {
+		$rsp['xo'] = 'err_db';
+		return $rsp;
+	}
+	$channel_count = $rsp['value'];
+
+	return array(
+		'ok' => 1,
+		'channel_count' => $channel_count
+	);
+}
+
 function usr_get_first_msg($usr_id, $formatted = false) {
 	$rsp = db_single("
 		SELECT *
@@ -306,14 +347,15 @@ function usr_set_mute($usr_id, $name, $mute) {
 	}
 }
 
-function usr_get_active($curr_usr_id = 0) {
+function usr_get_active($curr_usr_id = 0, $channel = 'main') {
 	$rsp = db_column("
 		SELECT id
 		FROM usr
 		WHERE id != ?
 		  AND context = 'chat'
 		  AND status != 'banned'
-	", array($curr_usr_id));
+		  AND channel = ?
+	", array($curr_usr_id, $channel));
 	if (! $rsp['ok']) {
 		return $rsp;
 	}

@@ -49,6 +49,8 @@ $xo_templates = array(
 	'cmd_hold_exists' =>      "Someone beat you to it. Message %d is already held.\nUse \"/approve %d\" to send it.",
 	'cmd_hold_announce' =>    "User %s has held message %d.\nUse \"/approve %d\" to send it.",
 	'cmd_login_success' =>    "You are now logged into %s. You can also post replies via SMS if you'd like.",
+	'cmd_channel' =>          "You are now in the %s channel. %s\nReply /leave to return to the main chat.",
+	'cmd_channel_announce' => "New channel: %s created by %s.",
 	'err_command_unknown' =>  "Hrm, I don't know the \"/%s\" command",
 	'err_command_no_help' =>  "There is a \"/%s\" command, but it doesn't have any help info.",
 	'err_command_empty_tx' => "Welp, we received your \"/%s\" command, but could not come up with anything useful to send you back.\nSo, instead you are seeing this. :shrug:",
@@ -61,6 +63,7 @@ $xo_templates = array(
 	'err_invalid_phone' =>    "Hmm. That phone number doesn't look valid.",
 	'err_login_invalid' =>    "Sorry, that login code didn't work. Try again?",
 	'err_login_expired' =>    "Oops, that login code has expired. Try again?",
+	'err_channel_format' =>   'Sorry, channel names must be limited to 16 letters, numbers, or underscores (no spaces).',
 	'err_msg_unknown' =>      "Huh, message with rx ID %d does not exist.",
 	'err_db' =>               "Oh no! There was a database-related error."
 );
@@ -81,14 +84,14 @@ function xo() {
 		return $xo;
 	} else {
 		if (DEBUG) {
-			echo "Could not find xo template $template_id.";
+			echo "Could not find xo template '$template_id'.";
 		}
 		return null;
 	}
 }
 
-function xo_chat_count($usr_id) {
-	$rsp = usr_get_active($usr_id);
+function xo_chat_count($usr_id, $channel = 'main') {
+	$rsp = usr_get_active($usr_id, $channel);
 	$active = $rsp['active'];
 	if (empty($rsp['active'])) {
 		$count = xo('ctx_chat_first');

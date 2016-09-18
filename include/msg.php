@@ -383,9 +383,16 @@ function msg_chat($usr_id, $rx_msg, $rx_id) {
 		);
 	}
 
-	$chat_id = msg_add_to_channel($rx_id, $usr->id, $rx_msg);
-	$rsp = usr_get_active($usr->id);
-	util_ensure_rsp($rsp);
+	$rsp = msg_add_to_channel($rx_id, $usr->id, $rx_msg, $usr->channel);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
+	$chat_id = $rsp['insert_id'];
+
+	$rsp = usr_get_active($usr->id, $usr->channel);
+	if (! $rsp['ok']) {
+		return $rsp;
+	}
 
 	if (empty($rsp['active'])) {
 		// If there are no active users, we are kinda done.
@@ -416,37 +423,14 @@ function msg_chat($usr_id, $rx_msg, $rx_id) {
 	);
 }
 
-function msg_body($rx_id) {
-	$db = db_setup();
-	$query = $db->prepare("
-		SELECT *
-		FROM rx
-		WHERE id = ?
-	");
-	$query->execute(array(
-		$rx_id
-	));
-	$msg = $query->fetchObject();
-	if ($msg) {
-		return $msg->msg;
-	} else {
-		return null;
-	}
-}
-
-function msg_add_to_channel($rx_id, $usr_id, $msg) {
+function msg_add_to_channel($rx_id, $usr_id, $msg, $channel = 'main') {
 	$db = db_setup();
 	$created = date('Y-m-d H:i:s');
-	$query = $db->prepare("
-		INSERT INTO channel
-		(rx_id, usr_id, msg, created)
-		VALUES (?, ?, ?, ?)
-	");
-	$query->execute(array(
-		$rx_id,
-		$usr_id,
-		$msg,
-		$created
+	return db_insert('channel', array(
+		'channel' => $channel,
+		'usr_id' => $usr_id,
+		'msg' => $msg,
+		'rx_id' => $rx_id,
+		'created' => $created
 	));
-	return $db->lastInsertId();
 }

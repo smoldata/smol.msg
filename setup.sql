@@ -54,9 +54,9 @@ DROP TABLE IF EXISTS `channel`;
 CREATE TABLE `channel` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `channel` varchar(16) DEFAULT 'main',
-  `rx_id` int(11) NOT NULL,
   `usr_id` int(11) NOT NULL,
   `msg` text NOT NULL,
+  `rx_id` int(11) NOT NULL,
   `created` datetime NOT NULL,
   `ip_address` varchar(255) DEFAULT NULL,
   `avatar_image` text,

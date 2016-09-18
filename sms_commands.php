@@ -98,6 +98,26 @@ function sms_command_name($usr_id, $new_name = null, $rx_id = null) {
 	}
 }
 
+function sms_command_channel($usr_id, $channel = null, $rx_id = null) {
+
+	// Switch to a new channel: /channel [channel]
+
+	$rsp = usr_set_channel($usr_id, $channel, $rx_id);
+	if ($rsp['ok']) {
+		if ($rsp['channel_count'] == 0) {
+			// Announce the creation of a new channel
+			$usr = usr_get("id$usr_id");
+			$announcement = xo('cmd_channel_announce', $channel, $usr->name);
+			msg_admin_tx($usr_id, "[$announcement]", $rx_id);
+		}
+		$count = xo_chat_count($usr_id, $channel);
+		return xo('cmd_channel', $channel, $count);
+	} else {
+		return xo($rsp['xo']);
+	}
+}
+	
+
 function sms_command_mute($usr_id, $mute_name = null, $rx_id = null) {
 
 	// Stop getting messages from a particular user: /mute [name]
