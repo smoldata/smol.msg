@@ -18,7 +18,8 @@ function sms_command($usr_id, $rx_msg, $rx_id, $cmd) {
 
 	return array(
 		'ok' => 1,
-		'msg' => $tx_msg
+		'rx_id' => $rx_id,
+		'tx_msg' => $tx_msg
 	);
 }
 
@@ -116,7 +117,14 @@ function sms_command_channel($usr_id, $channel = null, $rx_id = null) {
 		return xo($rsp['xo']);
 	}
 }
-	
+
+function sms_command_leave($usr_id, $args = null, $rx_id = null) {
+
+	// Leave a channel, returning to the main channel: /leave
+	// This is basically an alias of "/channel main"
+
+	return sms_command_channel($usr_id, 'main', $rx_id);
+}
 
 function sms_command_mute($usr_id, $mute_name = null, $rx_id = null) {
 

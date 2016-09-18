@@ -23,6 +23,7 @@ function sms_handler($usr_id, $rx_msg, $rx_id, $usr_context) {
 		);
 	}
 
+	$rsp['rx_id'] = $rx_id;
 	return $rsp;
 }
 
