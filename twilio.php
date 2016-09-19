@@ -40,6 +40,6 @@ if (! empty($rsp['tx_msg'])) {
 }
 
 // Update the user's active time
-if ($usr_context != 'intro') {
+if ($usr->context != 'intro') {
 	usr_update_active_time($usr_id);
 }
