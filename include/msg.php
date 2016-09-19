@@ -139,11 +139,11 @@ function msg_send_pending() {
 		'transmit_batch' => $tx_batch
 	), $where_clause);
 
+	if (DEBUG) {
+		echo "Update rsp\n";
+		print_r($rsp);
+	}
 	if (! $rsp['ok']) {
-		if (DEBUG) {
-			echo "Error updating transmit_batch\n";
-			print_r($rsp);
-		}
 		return $rsp;
 	}
 
